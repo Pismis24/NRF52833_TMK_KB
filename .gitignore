@@ -1,0 +1,5 @@
+project/Output/
+*.jlink
+*.emSession
+nrf_sdk/
+src/bak/
