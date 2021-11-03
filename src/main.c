@@ -52,8 +52,7 @@
 #include "keyboard.h"
 
 #include "tmk_driver.h"
-
-#include "kb_adc.h"
+ 
 #include "kb_evt.h"
 
 #include "ble_service.h"
@@ -116,20 +115,20 @@ int main()
     log_init();
     timer_init();
     scheduler_init();
-    
-    kb_adc_init();
 
     ble_init();
 
+    trig_kb_event(KB_EVT_INIT, NULL);
     keyboard_init();// keyboard_task_timer and matrix
 
-    trig_kb_event(KB_EVT_INIT, NULL);
+
 
     bool erase_bonds = false;
     advertising_start(erase_bonds);
 
+    trig_kb_event_param(KB_EVT_START, NULL);
     keyboard_start();
-    trig_kb_event_param(KB_EVT_START, 1);
+
     
     for(;;){
         idle_state_handle();

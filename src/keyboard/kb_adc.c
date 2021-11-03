@@ -14,6 +14,7 @@
 #include "app_timer.h"
 
 #include "kb_adc.h"
+#include "kb_evt.h"
 
 APP_TIMER_DEF(voltage_meas_timer);
 
@@ -48,6 +49,7 @@ static void saadc_event_handler(nrfx_saadc_evt_t const * p_event)
         nrf_saadc_value_t voltage = meas_result * 4.4;
         batt_percentage = trans_voltage_to_percentage(voltage);
         //NRF_LOG_INFO("meas %d, vol: %d, per: %d",meas_result, voltage, batt_percentage);
+        //完成测量后再启动下一次定时更新电量的定时器
         ret_code_t err_code;
         err_code = app_timer_start(voltage_meas_timer, APP_TIMER_TICKS(SAADC_SAMPLE_INTERVAL_MS), NULL);
         APP_ERROR_CHECK(err_code);
@@ -68,7 +70,7 @@ static void voltage_meas_timer_handler(void * p_context)
     APP_ERROR_CHECK(err_code);
 }
 
-void kb_adc_init(void)
+static void kb_adc_init(void)
 {
     ret_code_t err_code;
     //初始化SAADC
@@ -81,12 +83,30 @@ void kb_adc_init(void)
                                 APP_TIMER_MODE_SINGLE_SHOT,
                                 voltage_meas_timer_handler);
     APP_ERROR_CHECK(err_code);
-    //启动Timer开启定时测量
-    err_code = app_timer_start(voltage_meas_timer, APP_TIMER_TICKS(SAADC_SAMPLE_INTERVAL_MS), NULL);
-    APP_ERROR_CHECK(err_code);
 }
 
 uint8_t kb_batt_percentage(void)
 {
     return batt_percentage;
 }
+
+static void kb_event_adc_handler(kb_event_type_t event, void * p_arg)
+{
+    ret_code_t err_code;
+    switch(event)
+    {
+        case KB_EVT_INIT:
+            kb_adc_init();
+            NRF_LOG_INFO("Keyboard adc init");
+        case KB_EVT_START:
+            //启动Timer开启定时测量
+            err_code = app_timer_start(voltage_meas_timer, APP_TIMER_TICKS(SAADC_SAMPLE_INTERVAL_MS), NULL);
+            APP_ERROR_CHECK(err_code);
+            NRF_LOG_INFO("Keyboard adc start");
+            break;
+        default:
+            break;
+    }
+}
+
+KB_EVT_HANDLER(kb_event_adc_handler);

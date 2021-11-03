@@ -15,18 +15,18 @@
 /*diodes dir*/
 #define DIODES_ROW2COL
 /*row pins*/
-static const uint8_t row_pins[KEY_ROWS] = {
+static const uint8_t row_pins[KEY_ROWS] = {  
     PIN27, PIN26, PIN25, PIN24, PIN23, PIN22};
 /*col pins*/
 static const uint8_t col_pins[KEY_COLS] = {
     PIN21, PIN20, PIN19, PIN18, PIN17, PIN16, PIN15, PIN14, PIN13, PIN12, PIN11, PIN10, PIN09, PIN08, PIN07};
 /*matrix debounce*/
-#define MATRIX_SCAN_VALID_TIMES 5
+#define MATRIX_SCAN_VALID_TIMES 10
 
 
 /*Encoder*/
-//#define EC11_ENCODER
-//#define EC11_WITH_SWITCH
+#define EC11_ENCODER
+#define EC11_WITH_SWITCH
 
 #ifdef EC11_ENCODER
 
@@ -43,15 +43,13 @@ static const uint8_t col_pins[KEY_COLS] = {
 #endif
 
 
-
-
 #if defined(EC11_ENCODER) || defined(LUA)
-#define EXTRAKEY_EXIST
+#define MATRIX_EXTRAKEY_EXIST
 #endif
 
 
 /*Keymap Size*/
-#ifdef EXTRAKEY_EXIST //按键矩阵之外的按键单列一行
+#ifdef MATRIX_EXTRAKEY_EXIST //按键矩阵之外的按键单列一行
 #define MATRIX_ROWS (KEY_ROWS + 1)
 #else
 #define MATRIX_ROWS KEY_ROWS
@@ -70,6 +68,7 @@ static const uint8_t col_pins[KEY_COLS] = {
 #define BNR_LED_R PIN03
 
 /*背光灯设置*/
+#define BACKLIGHT_ENABLE
 #define BACKLIGHT_LEVELS 3
 
 /* key combination for command */

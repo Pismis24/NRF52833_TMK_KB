@@ -16,17 +16,45 @@
 #include "keyboard.h"
 #include "matrix.h"
 
+#include "kb_evt.h"
+
 #include "config.h"
 
+#ifndef MATRIX_SCAN_VALID_TIMES
+#define MATRIX_SCAN_VALID_TIMES 1
+#endif
 
-//为按键矩阵每行创建一个队列用于消抖
-NRF_QUEUE_ARRAY_DEF(
-    matrix_row_t, 
-    matrix_row_queues, 
-    MATRIX_SCAN_VALID_TIMES,
-    NRF_QUEUE_MODE_OVERFLOW,
-    KEY_ROWS
-);
+
+//消抖队列定义
+typedef struct {
+    matrix_row_t* frames;
+    uint8_t pointer_idx;
+} debounce_queue_t;
+//消抖队列初始化
+static void debounce_queue_init(debounce_queue_t* queue){
+    queue->frames = (matrix_row_t*)malloc(MATRIX_SCAN_VALID_TIMES * sizeof(matrix_row_t));
+    for(uint8_t idx=0; idx<MATRIX_SCAN_VALID_TIMES; idx++){
+        queue->frames[idx] = 0;
+    }
+    queue->pointer_idx = 0;
+}
+//消抖队列加入
+static void debounce_queue_in(debounce_queue_t* queue, matrix_row_t item){
+    queue->frames[queue->pointer_idx] = item;
+    queue->pointer_idx++;
+    queue->pointer_idx %= MATRIX_SCAN_VALID_TIMES;
+}
+//输出消抖队列结果
+static matrix_row_t debounce_result(debounce_queue_t* queue, matrix_row_t ori_value){
+    matrix_row_t need_change = ~(matrix_row_t)0;
+    for(uint8_t i=0; i<MATRIX_SCAN_VALID_TIMES; i++){
+        need_change &= (ori_value ^ queue->frames[i]);
+    }
+    return need_change ^ ori_value;
+}
+
+//定义消抖队列
+static debounce_queue_t debounce_queues[MATRIX_ROWS];
 //定义按键矩阵触发情况数组
 static matrix_row_t matrix[MATRIX_ROWS];
 
@@ -115,17 +143,6 @@ static void unselect_row(uint8_t row)
     #endif
 }
 
-static matrix_row_t debounce_result(matrix_row_t *frames, matrix_row_t ori_value)
-{
-    matrix_row_t need_change = ~(matrix_row_t)0;
-    for(uint8_t idx=0; idx<MATRIX_SCAN_VALID_TIMES; idx++){
-        //将该帧不一致的按键标记为需要变换
-        //在所有帧中按位与得到最终需要变化的按键
-        need_change &= (ori_value ^ frames[idx]);
-    }
-    //执行变换并返回
-    return ori_value ^ need_change;
-}
 
 uint8_t matrix_scan(void)
 {
@@ -135,33 +152,21 @@ uint8_t matrix_scan(void)
         //将该行激活
         select_row(idx);
         //等待稳定
-        nrf_delay_us(1);
+        nrf_delay_us(25);
         //读取行的列触发情况
         matrix_row_t row_value = cols_read();
         //存入队列，之前已经设置队列满后自动剔除最先进入的数值
-        err_code = nrf_queue_push(&matrix_row_queues[idx], &row_value);
-        APP_ERROR_CHECK(err_code);
-        //等到队列满后再进行按键变化判断
-        if(nrf_queue_is_full(&matrix_row_queues[idx])){
-            //将队列中全部数值取出
-            matrix_row_t temp_row_frames[MATRIX_SCAN_VALID_TIMES];
-            err_code = nrf_queue_read(
-                &matrix_row_queues[idx],
-                &temp_row_frames,
-                MATRIX_SCAN_VALID_TIMES
-                );
-            APP_ERROR_CHECK(err_code);
-            //执行判断，该行哪些按键的触发情况需要修改
-            matrix[idx] = debounce_result(temp_row_frames, matrix[idx]);
-        }
+        debounce_queue_in(&debounce_queues[idx], row_value);
+        //输出消抖结果
+        matrix[idx] = debounce_result(&debounce_queues[idx], matrix[idx]);
         //结束行激活状态
         unselect_row(idx);
         //等待稳定
-        nrf_delay_us(1);
+        nrf_delay_us(25);
     }
 }
 
-#ifdef EXTRAKEY_ENABLE
+#ifdef MATRIX_EXTRAKEY_EXIST
 static bool matrix_oneshot_send[MATRIX_ROWS];
 static matrix_row_t matrix_extra_oneshot[MATRIX_ROWS];
 static matrix_row_t matrix_extra[MATRIX_ROWS];
@@ -176,6 +181,7 @@ void matrix_extra_add_oneshot(uint8_t row, uint8_t col)
     }
     matrix_extra_oneshot[row] |= (1 << col);
     matrix_oneshot_send[row] = true;
+    //NRF_LOG_INFO("One shot pos %d %d", row, col);
 }
 
 void matrix_extra_set(uint8_t row, uint8_t col, bool press)
@@ -192,6 +198,7 @@ void matrix_extra_set(uint8_t row, uint8_t col, bool press)
     else{
         matrix_extra[row] &= ~(1 << col);
     }
+    //NRF_LOG_INFO("EXTRA KEY SET %d %d", row, col);
 }
 
 inline matrix_row_t matrix_get_row(uint8_t row)
@@ -203,7 +210,6 @@ inline matrix_row_t matrix_get_row(uint8_t row)
         matrix_extra_oneshot[row] = 0;
         matrix_oneshot_send[row] = false;
     }
-
     return value;
 }
 #else
@@ -218,8 +224,9 @@ void matrix_init(void)
     cols_init();
     rows_init();
     for(uint8_t idx=0; idx<MATRIX_ROWS; idx++){
+        debounce_queue_init(&debounce_queues[idx]);
         matrix[idx] = 0;
-#ifdef EXTRAKEY_ENABLE
+#ifdef MATRIX_EXTRAKEY_EXIST
         matrix_oneshot_send[idx] = false;
         matrix_extra_oneshot[idx] = 0;
         matrix_extra[idx] = 0;

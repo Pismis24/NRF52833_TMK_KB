@@ -1,5 +1,9 @@
 #include <stdint.h>
 
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+
 #include "ble_svc_hid.h"
 #include "ble_service.h"
 #include "host_driver.h"

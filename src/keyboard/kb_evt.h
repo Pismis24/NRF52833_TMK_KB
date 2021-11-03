@@ -7,8 +7,10 @@ typedef enum kb_event_lst {
     KB_EVT_INIT,
     KB_EVT_START,
     KB_EVT_SLEEP,
-    KB_EVT_USB
+    KB_EVT_USB,
+    KB_EVT_BLE,
 } kb_event_type_t;
+
 
 typedef void (*KbEvtHandler)(kb_event_type_t, void*);
 

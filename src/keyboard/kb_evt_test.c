@@ -10,7 +10,7 @@
 
 APP_TIMER_DEF(test_timer);
 
-static test_evt_trigger(void * p_context)
+static void test_evt_trigger(void * p_context)
 {
     trig_kb_event(KB_EVT_USB, NULL);
 }
