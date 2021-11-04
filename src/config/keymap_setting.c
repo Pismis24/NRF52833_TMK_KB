@@ -18,6 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "key_layout.h"
 #include "config.h"
 
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+
+#include "ble_service.h"
+
 const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KEYMAP(
         KC_ESC,  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,  KC_FN1,
@@ -26,21 +32,51 @@ const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_CAPS, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT, KC_ENT,
         KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,          KC_RSFT, KC_UP,
         KC_LCTL, KC_LGUI, KC_LALT,                   KC_SPC,                             KC_RALT, KC_RCTL, KC_FN0,  KC_LEFT, KC_DOWN, KC_RIGHT,
-        KC_VOLU, KC_VOLD, KC_MUTE
+        KC_WH_U, KC_WH_D, KC_MUTE
     ),
     KEYMAP(
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_FN2,
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
-        KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+        KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_FN3,
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, 
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,          KC_TRNS, KC_PGUP,
         KC_TRNS, KC_TRNS, KC_TRNS,                   KC_TRNS,                            KC_TRNS, KC_TRNS, KC_FN0,  KC_HOME, KC_PGDN, KC_END,
-        KC_TRNS, KC_TRNS, KC_TRNS
+        KC_VOLU, KC_VOLD, KC_MUTE
         )
+};
+
+enum action_func_nme{
+    DEL_BOND,
 };
 
 const action_t fn_actions[] = {
     ACTION_LAYER_MOMENTARY(1),
     ACTION_BACKLIGHT_STEP(),
-    ACTION_BACKLIGHT_TOGGLE()
+    ACTION_BACKLIGHT_TOGGLE(),
+    ACTION_FUNCTION(DEL_BOND)
 };
+
+
+void action_function(keyrecord_t *record, uint8_t id, uint8_t opt)
+{
+    static int32_t del_bond_time;
+    switch(id){
+    case DEL_BOND:
+        if(record->event.pressed){
+            NRF_LOG_INFO("delete bond pressed");
+            del_bond_time = record->event.time;
+        }
+        else{
+            int32_t time_sep = record->event.time - del_bond_time;
+            if(time_sep < 0){
+                time_sep = 0xffff - del_bond_time + record->event.time;
+            }
+            NRF_LOG_INFO("time sep %d time saved %d", time_sep, del_bond_time);
+            if(record->event.time - del_bond_time >= 3000){
+                NRF_LOG_INFO("delete bond");
+                delete_bonds();
+            }
+        }
+        break;
+    }
+}

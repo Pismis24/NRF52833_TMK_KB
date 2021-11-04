@@ -89,16 +89,22 @@ static void bnr_led_timer_timeout_handler(void * p_context)
 
 static void bnr_led_blink_timer_timeout_handler(void * p_context)
 {
+    red_active = false;
+    blue_active = false;
     if(blink_turn){
-        red_active = false;
         if(blue_blink){
             blue_active = true;
         }
+        else{
+            blue_active = false;
+        }
     }
     else{
-        blue_active = false;
         if(red_blink){
             red_active = true;
+        }
+        else{
+            red_active = false;
         }
     }
     blink_turn = !blink_turn;
@@ -192,7 +198,7 @@ void bnr_led_blink_set(enum bnr_blink_color color, enum bnr_blink_freq freq)
     //若原来处于闪烁状态则停止并重新设置闪烁间隔
     if(blink_timer_state){
         err_code = app_timer_stop(bnr_led_blink_timer);
-        APP_ERROR_HANDLER(err_code);
+        APP_ERROR_CHECK(err_code);
         blink_timer_state = false;
         red_active = red_state;
         blue_active = blue_state;
@@ -242,7 +248,7 @@ void bnr_led_blink_stop(void)
     ret_code_t err_code;
     if(blink_timer_state){
         err_code = app_timer_stop(bnr_led_blink_timer);
-        APP_ERROR_HANDLER(err_code);
+        APP_ERROR_CHECK(err_code);
         blink_timer_state = false;
         //恢复原点亮状态
         red_active = red_state;

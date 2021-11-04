@@ -32,6 +32,8 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 
+#include "kb_led.h"
+
 #define DEVICE_NAME                     "TMK_52833KB"                       /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME               "NordicSemiconductor"                   /**< Manufacturer. Will be passed to Device Information Service. */
 #define APP_ADV_INTERVAL                300                                     /**< The advertising interval (in units of 0.625 ms. This value corresponds to 187.5 ms). */
@@ -327,30 +329,37 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     {
         case BLE_ADV_EVT_DIRECTED_HIGH_DUTY:
             NRF_LOG_INFO("High Duty Directed advertising.");
+            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_FAST);
             break;
 
         case BLE_ADV_EVT_DIRECTED:
             NRF_LOG_INFO("Directed advertising.");
+            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_FAST);
             break;
 
         case BLE_ADV_EVT_FAST:
             NRF_LOG_INFO("Fast advertising.");
+            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_FAST);
             break;
 
         case BLE_ADV_EVT_SLOW:
             NRF_LOG_INFO("Slow advertising.");
+            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_SLOW);
             break;
 
         case BLE_ADV_EVT_FAST_WHITELIST:
             NRF_LOG_INFO("Fast advertising with whitelist.");
+            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_FAST);
             break;
 
         case BLE_ADV_EVT_SLOW_WHITELIST:
             NRF_LOG_INFO("Slow advertising with whitelist.");
+            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_SLOW);
             break;
 
         case BLE_ADV_EVT_IDLE:
-            NRF_LOG_INFO("ble adv idle, enter sleep mode")
+            NRF_LOG_INFO("ble adv idle, enter sleep mode");
+            bnr_led_blink_stop();
             //sleep_mode_enter();
             break;
 
@@ -425,7 +434,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
         case BLE_GAP_EVT_CONNECTED:
             NRF_LOG_INFO("Connected.");
-            
+            bnr_led_blink_stop();
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
             APP_ERROR_CHECK(err_code);

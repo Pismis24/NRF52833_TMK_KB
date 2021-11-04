@@ -60,7 +60,7 @@ static void encoder_switch_timeout_handler(void* p_context)
 
 const nrfx_qdec_config_t qdec_config = {
     .reportper = NRF_QDEC_REPORTPER_10,
-    .sampleper = NRF_QDEC_SAMPLEPER_128us,
+    .sampleper = NRF_QDEC_SAMPLEPER_256us,
     .psela = ENCA,
     .pselb = ENCB,
     .pselled = NRF_QDEC_LED_NOT_CONNECTED,
@@ -69,17 +69,43 @@ const nrfx_qdec_config_t qdec_config = {
     .interrupt_priority = APP_IRQ_PRIORITY_MID,
 };
 
+enum rotate_dir{
+    ROT_NEUTRAL,
+    ROT_FORWARD,
+    ROT_BACKWARD
+};
+static uint8_t pre_dir = ROT_NEUTRAL;
+static uint8_t report_cnt = 1;
 
 void decoder_event_handler(nrfx_qdec_event_t event)
 {
     if(event.type == NRF_QDEC_EVENT_REPORTRDY){
         if(event.data.report.accdbl == 0){
             if(event.data.report.acc > 0){
-                matrix_extra_add_oneshot(ENCODER_TN_POS);
-                //NRF_LOG_INFO("TN_POS");
+                if(pre_dir == ROT_BACKWARD){
+                    report_cnt = 1;
+                }
+                else{
+                    report_cnt++;
+                }
+                pre_dir = ROT_FORWARD;
+                if(report_cnt >= 4){
+                    matrix_extra_add_oneshot(ENCODER_TN_POS);
+                    report_cnt = 0;
+                }
             }
             if(event.data.report.acc < 0){
-                matrix_extra_add_oneshot(ENCODER_TN_NEG);
+                if(pre_dir == ROT_FORWARD){
+                    report_cnt = 1;
+                }
+                else{
+                    report_cnt++;
+                }
+                pre_dir = ROT_BACKWARD;
+                if(report_cnt >= 4){
+                    matrix_extra_add_oneshot(ENCODER_TN_NEG);
+                    report_cnt = 0;
+                }
                 //NRF_LOG_INFO("TN_NEG");
             }
         }
