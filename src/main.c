@@ -54,6 +54,7 @@
 #include "tmk_driver.h"
  
 #include "kb_evt.h"
+#include "kb_storage.h"
 
 #include "ble_service.h"
 
@@ -115,7 +116,7 @@ int main()
     log_init();
     timer_init();
     scheduler_init();
-
+    storage_init();
     ble_init();
 
     trig_kb_event(KB_EVT_INIT, NULL);
