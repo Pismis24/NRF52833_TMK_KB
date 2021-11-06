@@ -167,8 +167,6 @@ static void bnr_led_init(void)
         bnr_led_timer_timeout_handler
     );
     APP_ERROR_CHECK(err_code);
-    err_code = app_timer_start(bnr_led_timer, BNR_LED_DRIVE_INTERVAL, NULL);
-    APP_ERROR_CHECK(err_code);
     err_code = app_timer_create(
         &bnr_led_blink_timer,
         APP_TIMER_MODE_REPEATED,
@@ -297,11 +295,17 @@ static void keyboard_led_deinit(void)
 
 static void keyboard_led_event_handler(kb_event_type_t event, void * p_arg)
 {
+    ret_code_t err_code;
     uint8_t param = (uint32_t)p_arg;
     switch(event)
     {
         case KB_EVT_INIT:
+            bnr_led_init();
             keyboard_led_init();
+            break;
+        case KB_EVT_START:
+            err_code = app_timer_start(bnr_led_timer, BNR_LED_DRIVE_INTERVAL, NULL);
+            APP_ERROR_CHECK(err_code);
             break;
         /*case KB_EVT_SLEEP:
             keyboard_led_deinit();

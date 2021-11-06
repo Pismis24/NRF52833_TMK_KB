@@ -64,7 +64,6 @@
           <configuration Name="Debug" build_exclude_from_build="Yes" />
         </file>
         <file file_name="../src/keyboard/kb_backlight.c" />
-        <file file_name="../src/keyboard/kb_led.h" />
         <file file_name="../src/keyboard/kb_wdt.c" />
         <file file_name="../src/keyboard/kb_storage.c" />
         <file file_name="../src/keyboard/kb_storage.h" />

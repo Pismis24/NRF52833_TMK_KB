@@ -19,7 +19,6 @@
 
 void keyboard_start(void)
 {
-
     host_set_driver(&ble_driver);
     //启动timer1
     const nrfx_timer_t kbd_task_timer = NRFX_TIMER_INSTANCE(KBD_TASK_TIMER);

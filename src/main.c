@@ -123,7 +123,7 @@ int main()
     keyboard_init();// keyboard_task_timer and matrix
 
 
-
+    app_sched_execute();
     bool erase_bonds = false;
     advertising_start(erase_bonds);
 
