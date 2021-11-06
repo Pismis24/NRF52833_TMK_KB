@@ -67,6 +67,25 @@
 #define SCHED_QUEUE_SIZE 20
 #endif
 
+static void set_gpio_voltage_3V3(void)
+{
+    // Configure UICR_REGOUT0 register only if it is set to default value.
+    if ((NRF_UICR->REGOUT0 & UICR_REGOUT0_VOUT_Msk) != (UICR_REGOUT0_VOUT_3V3 << UICR_REGOUT0_VOUT_Pos))
+    {
+        NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Wen;
+        while (NRF_NVMC->READY == NVMC_READY_READY_Busy){}
+        
+
+        NRF_UICR->REGOUT0 = (NRF_UICR->REGOUT0 & ~((uint32_t)UICR_REGOUT0_VOUT_Msk)) | (UICR_REGOUT0_VOUT_3V3 << UICR_REGOUT0_VOUT_Pos);
+
+        NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Ren;
+        while (NRF_NVMC->READY == NVMC_READY_READY_Busy){}
+
+        // System reset is needed to update UICR registers.
+        NVIC_SystemReset();
+    }
+}
+
 static void log_init(void)
 {
     ret_code_t err_code = NRF_LOG_INIT(NULL);
@@ -113,6 +132,7 @@ static void idle_state_handle(void)
 
 int main()
 {
+    set_gpio_voltage_3V3();
     log_init();
     timer_init();
     scheduler_init();
