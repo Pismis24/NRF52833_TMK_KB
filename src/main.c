@@ -67,6 +67,9 @@
 #define SCHED_QUEUE_SIZE 20
 #endif
 
+
+//Setting GPIO Voltage to 3.3V
+//Default 1.8V is too low for mos on the board
 static void set_gpio_voltage_3V3(void)
 {
     // Configure UICR_REGOUT0 register only if it is set to default value.

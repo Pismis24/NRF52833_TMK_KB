@@ -76,6 +76,8 @@ BLE_ADVERTISING_DEF(m_advertising);                                             
 uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;                        /**< Handle of the current connection. */
 static bool m_in_boot_mode = false;                    /**< Current protocol mode. */
 static pm_peer_id_t m_peer_id;                                 /**< Device reference handle to the current bonded central. */
+static bool manual_disconnect = false; /*whether disconnect is manually trigger*/
+static bool on_adv = false;
 
 /* YOUR_JOB: Declare all services structure your application is using
  *  BLE_XYZ_DEF(m_xyz);
@@ -147,7 +149,9 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
         case PM_EVT_BONDED_PEER_CONNECTED:
             break;
         case PM_EVT_PEERS_DELETE_SUCCEEDED:
-            advertising_start(false);
+            if(!on_adv){
+                advertising_start(false);
+            }
             break;
         case PM_EVT_PEER_DATA_UPDATE_SUCCEEDED:
             if (p_evt->params.peer_data_update_succeeded.flash_changed 
@@ -315,6 +319,37 @@ static void conn_params_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
+static void ble_conn_handle_change(uint16_t old, uint16_t new)
+{
+    if (old != BLE_CONN_HANDLE_INVALID) {
+        sd_ble_gap_rssi_stop(old);
+    }
+    if (new != BLE_CONN_HANDLE_INVALID) {
+        sd_ble_gap_rssi_start(new, 5, 5);
+    }
+}
+
+static uint8_t current_tx = 6; // 0dbm default.
+
+/**
+ * @brief RSSI 改变事件处理器
+ * 
+ * @param rssi 
+ */
+static void ble_rssi_change(int8_t rssi)
+{
+    const int8_t tx_power_table[] = { -40, -20, -16, -12, -8, -4, 0, 3, 4 };
+    if (rssi >= -65 && current_tx > 0)
+        current_tx--;
+    else if (rssi <= -80 && current_tx < sizeof(tx_power_table) - 1)
+        current_tx++;
+    else
+        return;
+    NRF_LOG_INFO("tx value %d", tx_power_table[current_tx]);
+    sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_CONN, m_conn_handle, tx_power_table[current_tx]);
+}
+
+
 /**@brief Function for handling advertising events.
  *
  * @details This function will be called for advertising events which are passed to the application.
@@ -330,36 +365,43 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
         case BLE_ADV_EVT_DIRECTED_HIGH_DUTY:
             NRF_LOG_INFO("High Duty Directed advertising.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_FAST);
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_DIRECTED:
             NRF_LOG_INFO("Directed advertising.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_SLOW);
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_FAST:
             NRF_LOG_INFO("Fast advertising.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_FAST);
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_SLOW:
             NRF_LOG_INFO("Slow advertising.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_SLOW);
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_FAST_WHITELIST:
             NRF_LOG_INFO("Fast advertising with whitelist.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_FAST);
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_SLOW_WHITELIST:
             NRF_LOG_INFO("Slow advertising with whitelist.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_SLOW);
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_IDLE:
             NRF_LOG_INFO("ble adv idle, enter sleep mode");
             trig_kb_event(KB_EVT_SLEEP);
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_WHITELIST_REQUEST:
@@ -372,7 +414,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
             err_code = pm_whitelist_get(whitelist_addrs, &addr_cnt,
                                         whitelist_irks,  &irk_cnt);
             APP_ERROR_CHECK(err_code);
-            NRF_LOG_INFO("pm_whitelist_get returns %d addr in whitelist and %d irk whitelist",
+            NRF_LOG_DEBUG("pm_whitelist_get returns %d addr in whitelist and %d irk whitelist",
                           addr_cnt, irk_cnt);
 
             // Set the correct identities list (no excluding peers with no Central Address Resolution).
@@ -414,6 +456,8 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     }
 }
 
+
+
 /**@brief Function for handling BLE events.
  *
  * @param[in]   p_ble_evt   Bluetooth stack event.
@@ -427,6 +471,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
     {
         case BLE_GAP_EVT_DISCONNECTED:
             NRF_LOG_INFO("Disconnected.");
+            ble_conn_handle_change(m_conn_handle, BLE_CONN_HANDLE_INVALID);
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_GAP_DISCONN);
             break;
@@ -436,7 +481,9 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
             APP_ERROR_CHECK(err_code);
+            ble_conn_handle_change(m_conn_handle, p_ble_evt->evt.gap_evt.conn_handle);
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_GAP_CONN);
+            on_adv = false;
             break;
 
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
@@ -470,7 +517,9 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             // Send next key
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_GATT_TX_DONE);
             break;
-        
+        case BLE_GAP_EVT_RSSI_CHANGED:
+            ble_rssi_change(p_ble_evt->evt.gap_evt.params.rssi_changed.rssi);
+            break;
         default:
             // No implementation needed.
             break;
@@ -605,8 +654,8 @@ void advertising_start(bool erase_bonds)
     }
     else
     {
+        whitelist_set(PM_PEER_ID_LIST_SKIP_NO_ID_ADDR);
         ret_code_t err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
-
         APP_ERROR_CHECK(err_code);
     }
 }
@@ -629,8 +678,6 @@ static void advertising_modes_config_get(ble_advertising_t * const p_advertising
     p_config->ble_adv_slow_timeout               = adv_config.ble_adv_slow_timeout;
     p_config->ble_adv_on_disconnect_disabled     = adv_config.ble_adv_on_disconnect_disabled;
 }
-
-static bool manual_disconnect = false;
 
 void ble_conn_close(void)
 {

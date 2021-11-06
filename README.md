@@ -55,6 +55,12 @@ Nordic SDK版本：nRF5_SDK_17.0.2
 * USB有线连接  
 * 功耗优化（有背光灯估计优化不到哪去）
 
+---
+
+## 已知问题
+
+* 删除绑定后会报错卡死，看门狗将会重启系统，重新开始开机初始化到广播的流程（出错但还是能达到目的，曲线救国了属于是）
+
 - - -
 - - -
 
@@ -67,7 +73,6 @@ This firmware is written for my custom keyboard, some code was written specially
 
 * control board: https://oshwhub.com/Pismis24/nrf52833-kb-control-board
 * main board: https://oshwhub.com/Pismis24/nrf52keyboard-mainboard
-
 
 - - -
 
@@ -113,3 +118,8 @@ This firmware is written for my custom keyboard, some code was written specially
 * USB Connection
 * Power optimization
   
+- - -
+
+## Known Issues
+
+* Error occur when manually delete bond, will cause crash and system reset by watchdog(Well, the bonding process will begin after the reset, still work but rather annoying)
