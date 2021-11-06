@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 
+#include "ble.h"
 #include "ble_service.h"
 
 const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -32,11 +33,11 @@ const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_CAPS, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT, KC_ENT,
         KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,          KC_RSFT, KC_UP,
         KC_LCTL, KC_LGUI, KC_LALT,                   KC_SPC,                             KC_RALT, KC_RCTL, KC_FN0,  KC_LEFT, KC_DOWN, KC_RIGHT,
-        KC_WH_U, KC_WH_D, KC_MUTE
+        KC_WH_D, KC_WH_U, KC_MUTE
     ),
     KEYMAP(
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_FN2,
-        KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+        KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_FN4,  KC_TRNS,
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_FN3,
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, 
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,          KC_TRNS, KC_PGUP,
@@ -47,13 +48,15 @@ const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 enum action_func_nme{
     DEL_BOND,
+    BLE_CONN_TOGGLE,
 };
 
 const action_t fn_actions[] = {
     ACTION_LAYER_MOMENTARY(1),
     ACTION_BACKLIGHT_STEP(),
     ACTION_BACKLIGHT_TOGGLE(),
-    ACTION_FUNCTION(DEL_BOND)
+    ACTION_FUNCTION(DEL_BOND),
+    ACTION_FUNCTION(BLE_CONN_TOGGLE)
 };
 
 
@@ -76,6 +79,11 @@ void action_function(keyrecord_t *record, uint8_t id, uint8_t opt)
                 NRF_LOG_INFO("delete bond");
                 delete_bonds();
             }
+        }
+        break;
+    case BLE_CONN_TOGGLE:
+        if(record->event.pressed){
+            ble_conn_toggle();
         }
         break;
     }

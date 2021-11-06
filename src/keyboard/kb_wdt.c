@@ -16,12 +16,12 @@
 
 #include "kb_evt.h"
 
-#define WDT_RELOAD_TIME (KEYBOARD_TASK_INTERVAL * 10) // 10倍keyboard task运行周期
+#define WDT_RELOAD_TIME (KEYBOARD_TASK_INTERVAL * 100) // 100倍keyboard task运行周期 (100ms)
 
 // watchdog timer expired handle
 static void kb_watchdog_handler(void)
 {
-   APP_ERROR_HANDLER(0xFEED0514);
+   APP_ERROR_HANDLER(0xFEEDF00D);
 }
 
 static nrfx_wdt_channel_id kb_wdt_channel_id;
@@ -41,6 +41,7 @@ static void watchdog_init(void)
 static void kb_watchdog_evt_handler(kb_event_type_t event, void * p_arg)
 {
     ret_code_t err_code;
+    uint8_t param = (uint32_t)p_arg;
     switch(event){
     case KB_EVT_INIT:
         watchdog_init();
@@ -50,15 +51,13 @@ static void kb_watchdog_evt_handler(kb_event_type_t event, void * p_arg)
         nrfx_wdt_enable();
         NRF_LOG_INFO("keyboard wdt start");
         break;
+    case KB_EVT_TMK_HOOK:
+        if(param == TMK_HOOK_LOOP){
+            nrfx_wdt_channel_feed(kb_wdt_channel_id);
+        }
     default:
         break;
     }
 }
 
 KB_EVT_HANDLER(kb_watchdog_evt_handler);
-
-void hook_keyboard_loop(void)
-{
-    //每个键盘周期喂一次狗
-    nrfx_wdt_channel_feed(kb_wdt_channel_id);
-}

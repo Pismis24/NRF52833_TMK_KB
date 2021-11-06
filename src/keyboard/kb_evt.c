@@ -32,12 +32,12 @@ static void kb_event_handler(kb_event_type_t event, void* p_arg)
     }
 }
 
-void trig_kb_event(kb_event_type_t event, void* p_arg){
+static void trig_event(kb_event_type_t event, void* p_arg){
     ret_code_t err_code;
     event_queue_item_t event_item = {0};
     switch(event){
         case KB_EVT_INIT:
-        case KB_EVT_START:
+        case KB_EVT_START:      
             kb_event_handler(event, p_arg);//以上事件需要立刻处理
             break;
         default:
@@ -50,9 +50,14 @@ void trig_kb_event(kb_event_type_t event, void* p_arg){
     }
 }
 
+void trig_kb_event(kb_event_type_t event)
+{
+    trig_event(event, NULL);
+}
+
 void trig_kb_event_param(kb_event_type_t event, uint8_t arg)
 {
-    trig_kb_event(event, (void*)(uint32_t)arg);
+    trig_event(event, (void*)(uint32_t)arg);
 }
 
 void execute_kb_event(void)

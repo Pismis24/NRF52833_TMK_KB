@@ -15,7 +15,7 @@
 #define TICK_PER_MILLISECOND (32768 / (APP_TIMER_CONFIG_RTC_FREQUENCY + 1) / 1000)
 
 //主扫描计时器，使用硬件timer
-const nrfx_timer_t kbd_task_timer = NRFX_TIMER_INSTANCE(KBD_TASK_TIMER);
+static const nrfx_timer_t kbd_task_timer = NRFX_TIMER_INSTANCE(KBD_TASK_TIMER);
 
 static void kbd_task_timeout_handler(nrf_timer_event_t event_type, void* p_context)
 {

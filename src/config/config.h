@@ -56,6 +56,21 @@ static const uint8_t col_pins[KEY_COLS] = {
 #endif
 #define MATRIX_COLS KEY_COLS
 
+/*自动休眠设置*/
+#define AUTO_SLEEP_ENABLE
+#define AUTO_SLEEP_TIMEOUT 600 // in second
+#if defined(AUTO_SLEEP_ENABLE) && !defined(AUTO_SLEEP_TIMEOUT)
+    #define AUTO_SLEEP_TIMEOUT 300
+#endif
+#define AUTO_SLEEP_TIMEOUT_MIL_SECOND (AUTO_SLEEP_TIMEOUT*1000)
+
+/*进入省电状态设置*/
+#define POWERSAVE_ENABLE
+#define POWERSAVE_TIMEOUT 180 // in second
+#if defined(POWERSAVE_ENABLE) && !defined(POWERSAVE_TIMEOUT)
+    #define POWERSAVE_TIMEOUT 60
+#endif
+#define POWERSAVE_TIMEOUT_MIL_SECOND (POWERSAVE_TIMEOUT*1000)
 
 /*大小写灯*/
 #define CAPS_LED PIN01

@@ -13,6 +13,8 @@
 
 #include "nrf_queue.h"
 
+#include "kb_evt.h"
+
 #include "ble_svc_hid.h"
 
 #define BASE_USB_HID_SPEC_VERSION 0x0101 /**< Version number of base USB HID Specification implemented by this application. */
@@ -251,7 +253,7 @@ static uint32_t send_key(ble_hids_t* p_hids,
     return err_code;
 }
 
-void send_next_buffer(void)
+static void send_next_buffer(void)
 {
     buffer_entry_t* p_element;
     ret_code_t err_code = NRF_SUCCESS;
@@ -309,13 +311,13 @@ void keys_send(uint8_t report_id, uint8_t key_pattern_len, uint8_t* p_key_patter
             else{
                 err_code = send_key(&m_hids, report_index, p_key_pattern, key_pattern_len);
                 if (err_code == NRF_ERROR_RESOURCES) { buffer_in = true; }
-                else if(
-                    (err_code != NRF_SUCCESS) 
+                else if((err_code != NRF_SUCCESS) 
                     && (err_code != NRF_ERROR_INVALID_STATE) 
                     && (err_code != NRF_ERROR_BUSY) 
                     && (err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING) 
-                    && (err_code != NRF_ERROR_FORBIDDEN)
-                ) { APP_ERROR_HANDLER(err_code); }
+                    && (err_code != NRF_ERROR_FORBIDDEN)) { 
+                    APP_ERROR_CHECK(err_code); 
+                }
             }
         }
     }
@@ -402,7 +404,24 @@ void hid_init(void)
     hids_init();
 }
 
-void clear_buffer(void)
+static void clear_buffer(void)
 {
     buffer_init();
 }
+
+static void kb_ble_hids_evt_handle(kb_event_type_t event, void * p_arg)
+{
+    uint8_t param = (uint32_t)p_arg;
+    if(event == KB_EVT_BLE){
+        switch(param){
+        case KB_BLE_GAP_DISCONN:
+            clear_buffer();
+            break;
+        case KB_BLE_GATT_TX_DONE:
+            send_next_buffer();
+            break;
+        }
+    }
+}
+
+KB_EVT_HANDLER(kb_ble_hids_evt_handle);

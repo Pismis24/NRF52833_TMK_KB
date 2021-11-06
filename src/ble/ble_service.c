@@ -32,7 +32,7 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 
-#include "kb_led.h"
+#include "kb_evt.h"
 
 #define DEVICE_NAME                     "TMK_52833KB"                       /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME               "NordicSemiconductor"                   /**< Manufacturer. Will be passed to Device Information Service. */
@@ -77,7 +77,6 @@ uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;                        /**< Ha
 static bool m_in_boot_mode = false;                    /**< Current protocol mode. */
 static pm_peer_id_t m_peer_id;                                 /**< Device reference handle to the current bonded central. */
 
-
 /* YOUR_JOB: Declare all services structure your application is using
  *  BLE_XYZ_DEF(m_xyz);
  */
@@ -119,6 +118,7 @@ static void whitelist_set(pm_peer_id_list_skip_t skip)
  */
 static void identities_set(pm_peer_id_list_skip_t skip)
 {
+
     pm_peer_id_t peer_ids[BLE_GAP_DEVICE_IDENTITIES_MAX_COUNT];
     uint32_t     peer_id_count = BLE_GAP_DEVICE_IDENTITIES_MAX_COUNT;
 
@@ -329,38 +329,37 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     {
         case BLE_ADV_EVT_DIRECTED_HIGH_DUTY:
             NRF_LOG_INFO("High Duty Directed advertising.");
-            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_FAST);
+            trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_FAST);
             break;
 
         case BLE_ADV_EVT_DIRECTED:
             NRF_LOG_INFO("Directed advertising.");
-            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_FAST);
+            trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_SLOW);
             break;
 
         case BLE_ADV_EVT_FAST:
             NRF_LOG_INFO("Fast advertising.");
-            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_FAST);
+            trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_FAST);
             break;
 
         case BLE_ADV_EVT_SLOW:
             NRF_LOG_INFO("Slow advertising.");
-            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_SLOW);
+            trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_SLOW);
             break;
 
         case BLE_ADV_EVT_FAST_WHITELIST:
             NRF_LOG_INFO("Fast advertising with whitelist.");
-            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_FAST);
+            trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_FAST);
             break;
 
         case BLE_ADV_EVT_SLOW_WHITELIST:
             NRF_LOG_INFO("Slow advertising with whitelist.");
-            bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_SLOW);
+            trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_SLOW);
             break;
 
         case BLE_ADV_EVT_IDLE:
             NRF_LOG_INFO("ble adv idle, enter sleep mode");
-            bnr_led_blink_stop();
-            //sleep_mode_enter();
+            trig_kb_event(KB_EVT_SLEEP);
             break;
 
         case BLE_ADV_EVT_WHITELIST_REQUEST:
@@ -373,7 +372,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
             err_code = pm_whitelist_get(whitelist_addrs, &addr_cnt,
                                         whitelist_irks,  &irk_cnt);
             APP_ERROR_CHECK(err_code);
-            NRF_LOG_DEBUG("pm_whitelist_get returns %d addr in whitelist and %d irk whitelist",
+            NRF_LOG_INFO("pm_whitelist_get returns %d addr in whitelist and %d irk whitelist",
                           addr_cnt, irk_cnt);
 
             // Set the correct identities list (no excluding peers with no Central Address Resolution).
@@ -428,16 +427,16 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
     {
         case BLE_GAP_EVT_DISCONNECTED:
             NRF_LOG_INFO("Disconnected.");
-            //断连后将buffer清空
-            clear_buffer();
+            m_conn_handle = BLE_CONN_HANDLE_INVALID;
+            trig_kb_event_param(KB_EVT_BLE, KB_BLE_GAP_DISCONN);
             break;
 
         case BLE_GAP_EVT_CONNECTED:
             NRF_LOG_INFO("Connected.");
-            bnr_led_blink_stop();
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
             APP_ERROR_CHECK(err_code);
+            trig_kb_event_param(KB_EVT_BLE, KB_BLE_GAP_CONN);
             break;
 
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
@@ -469,7 +468,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             break;
         case BLE_GATTS_EVT_HVN_TX_COMPLETE:
             // Send next key
-            send_next_buffer();
+            trig_kb_event_param(KB_EVT_BLE, KB_BLE_GATT_TX_DONE);
             break;
         
         default:
@@ -612,26 +611,70 @@ void advertising_start(bool erase_bonds)
     }
 }
 
-/**
- * @brief 重新开启蓝牙广播.
- * 
- * @param[in] mode  广播模式
- * @param[in] whitelist  是否启用白名单
- */
-void advertising_restart(ble_adv_mode_t mode, bool whitelist)
+static void advertising_modes_config_get(ble_advertising_t * const p_advertising,
+                                   ble_adv_modes_config_t* p_config)
 {
+    ble_adv_modes_config_t adv_config = p_advertising->adv_modes_config;
+    memset(p_config, 0, sizeof(ble_adv_modes_config_t));
+    p_config->ble_adv_whitelist_enabled          = adv_config.ble_adv_whitelist_enabled;
+    p_config->ble_adv_directed_high_duty_enabled = adv_config.ble_adv_directed_high_duty_enabled;
+    p_config->ble_adv_directed_enabled           = adv_config.ble_adv_directed_enabled;
+    p_config->ble_adv_directed_interval          = adv_config.ble_adv_directed_interval;
+    p_config->ble_adv_directed_timeout           = adv_config.ble_adv_directed_timeout;
+    p_config->ble_adv_fast_enabled               = adv_config.ble_adv_fast_enabled;
+    p_config->ble_adv_fast_interval              = adv_config.ble_adv_fast_interval;
+    p_config->ble_adv_fast_timeout               = adv_config.ble_adv_fast_timeout;
+    p_config->ble_adv_slow_enabled               = adv_config.ble_adv_slow_enabled;
+    p_config->ble_adv_slow_interval              = adv_config.ble_adv_slow_interval;
+    p_config->ble_adv_slow_timeout               = adv_config.ble_adv_slow_timeout;
+    p_config->ble_adv_on_disconnect_disabled     = adv_config.ble_adv_on_disconnect_disabled;
+}
+
+static bool manual_disconnect = false;
+
+void ble_conn_close(void)
+{
+    if(manual_disconnect){
+        return;
+    }
+    // Prevent device from advertising on disconnect.
+    ble_adv_modes_config_t config;
+    advertising_modes_config_get(&m_advertising, &config);
+    config.ble_adv_on_disconnect_disabled = true;
+    ble_advertising_modes_config_set(&m_advertising, &config);
     if (m_conn_handle == BLE_CONN_HANDLE_INVALID) {
         sd_ble_gap_adv_stop(m_advertising.adv_handle);
-        ble_advertising_start(&m_advertising, mode);
     } else {
         sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
     }
-
-    if (!whitelist) {
-        ble_advertising_restart_without_whitelist(&m_advertising);
-    }
+    manual_disconnect = true;
+    trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_STOP);
 }
 
+void ble_conn_restart(void)
+{
+    if(!manual_disconnect){
+        return;
+    }
+    // setting adv config to default
+    ble_adv_modes_config_t config;
+    advertising_modes_config_get(&m_advertising, &config);
+    config.ble_adv_on_disconnect_disabled = false;
+    ble_advertising_modes_config_set(&m_advertising, &config);
+
+    advertising_start(false);
+    manual_disconnect = false;
+}
+
+void ble_conn_toggle(void)
+{
+    if(!manual_disconnect){
+        ble_conn_close();
+    }
+    else{
+        ble_conn_restart();
+    }
+}
 
 /*蓝牙服务初始化函数*/
 void ble_init()

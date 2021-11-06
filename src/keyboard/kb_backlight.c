@@ -19,6 +19,8 @@
 #define PWM_TOP_LUM 750    //MAX_COUNT - TOP_LUM决定最大亮度占空比
 
 static nrfx_pwm_t m_pwm0 = NRFX_PWM_INSTANCE(BACKLIGHT_PWM_INSTANCE);
+static bool in_powersave = false;
+static bool current_level;
 
 static const nrfx_pwm_config_t pwm_config = 
 {
@@ -62,6 +64,7 @@ static void backlight_pwm_init(void)
 
 static void pwm_backlight_set(uint8_t backlight_level)
 {
+    if(in_powersave){ return; }
     NRF_LOG_INFO("backlight set %d", backlight_level);
     nrf_pwm_sequence_t const pwm_seq = {
         .values.p_common = &duty_values[backlight_level],
@@ -74,15 +77,32 @@ static void pwm_backlight_set(uint8_t backlight_level)
 
 void backlight_set(uint8_t level)
 {
+    current_level = level;
     pwm_backlight_set(level);
 }
 
 static void kb_backlight_event_handler(kb_event_type_t event, void * p_arg)
 {
+    ret_code_t err_code;
+    uint8_t param = (uint32_t)p_arg;
     switch(event){
     case KB_EVT_INIT:
         NRF_LOG_INFO("keyboard backlight init");
         backlight_pwm_init();
+        break;
+    case KB_EVT_POWERSAVE:
+        switch(param){
+            case KB_POWERSAVE_ENTER:
+                nrfx_pwm_uninit(&m_pwm0);
+                in_powersave = true;
+                break;
+            case KB_POWERSAVE_EXIT:
+                err_code = nrfx_pwm_init(&m_pwm0, &pwm_config, NULL);
+                APP_ERROR_CHECK(err_code);
+                in_powersave = false;
+                pwm_backlight_set(current_level);
+                break;
+        }
         break;
     default:
         break;

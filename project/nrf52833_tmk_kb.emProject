@@ -64,11 +64,13 @@
           <configuration Name="Debug" build_exclude_from_build="Yes" />
         </file>
         <file file_name="../src/keyboard/kb_backlight.c" />
-        <file file_name="../src/keyboard/kb_led.c" />
         <file file_name="../src/keyboard/kb_led.h" />
         <file file_name="../src/keyboard/kb_wdt.c" />
         <file file_name="../src/keyboard/kb_storage.c" />
         <file file_name="../src/keyboard/kb_storage.h" />
+        <file file_name="../src/keyboard/kb_sleep.c" />
+        <file file_name="../src/keyboard/kb_led.c" />
+        <file file_name="../src/keyboard/kb_powersave.c" />
       </folder>
       <folder Name="drivers">
         <file file_name="../src/drivers/ec11.c" />
@@ -80,6 +82,7 @@
         <file file_name="../src/tmk_glue/tmk_bootloader.c" />
         <file file_name="../src/tmk_glue/tmk_driver.h" />
         <file file_name="../src/tmk_glue/eeconfig_fds.c" />
+        <file file_name="../src/tmk_glue/tmk_hook.c" />
       </folder>
       <folder Name="ble">
         <file file_name="../src/ble/ble_service.c" />
