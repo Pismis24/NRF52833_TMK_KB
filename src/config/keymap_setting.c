@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "nrf_log_default_backends.h"
 
 #include "ble.h"
-#include "ble_service.h"
+#include "ble_main.h"
 
 const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KEYMAP(
@@ -77,7 +77,7 @@ void action_function(keyrecord_t *record, uint8_t id, uint8_t opt)
             NRF_LOG_INFO("time sep %d time saved %d", time_sep, del_bond_time);
             if(record->event.time - del_bond_time >= 3000){
                 NRF_LOG_INFO("delete bond");
-                delete_bonds();
+                runtime_erase_bond();
             }
         }
         break;

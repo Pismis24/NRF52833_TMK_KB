@@ -15,6 +15,7 @@
 
 #include "kb_evt.h"
 
+#include "ble_main.h"
 #include "ble_svc_hid.h"
 
 #define BASE_USB_HID_SPEC_VERSION 0x0101 /**< Version number of base USB HID Specification implemented by this application. */

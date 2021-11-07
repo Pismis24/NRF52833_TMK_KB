@@ -84,20 +84,28 @@
         <file file_name="../src/tmk_glue/tmk_hook.c" />
       </folder>
       <folder Name="ble">
-        <file file_name="../src/ble/ble_service.c" />
-        <file file_name="../src/ble/ble_service.h" />
-        <file file_name="../src/ble/ble_svc_dis.c" />
-        <file file_name="../src/ble/ble_svc_dis.h" />
-        <file file_name="../src/ble/ble_svc_bas.c" />
-        <file file_name="../src/ble/ble_svc_bas.h" />
+        <file file_name="../src/ble/ble_service.c">
+          <configuration Name="Debug" build_exclude_from_build="Yes" />
+        </file>
+        <file file_name="../src/ble/ble_service.h">
+          <configuration Name="Debug" build_exclude_from_build="Yes" />
+        </file>
         <file file_name="../src/ble/ble_hid_descriptor.h" />
         <file file_name="../src/ble/ble_svc_hid.c" />
         <file file_name="../src/ble/ble_svc_hid.h" />
+        <configuration Name="Debug" build_exclude_from_build="No" />
+        <file file_name="../src/ble/ble_svc_bas.c" />
+        <file file_name="../src/ble/ble_svc_bas.h" />
+        <file file_name="../src/ble/ble_svc_dis.c" />
+        <file file_name="../src/ble/ble_svc_dis.h" />
+        <file file_name="../src/ble/ble_main.c" />
+        <file file_name="../src/ble/ble_main.h" />
       </folder>
       <folder Name="protocol">
         <file file_name="../src/protocol/ble_protocol.c" />
         <file file_name="../src/protocol/ble_protocol.h" />
       </folder>
+      <folder Name="ble new" />
     </folder>
     <folder Name="nRF_SDK">
       <folder Name="nRF_Segger_RTT">
