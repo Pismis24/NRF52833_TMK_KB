@@ -19,7 +19,13 @@ typedef struct
 typedef struct
 {
     config_data_t config_data;
+    uint8_t kb_current_protocol;
 }__attribute__((aligned(4))) store_data_t;
+
+enum protocol_types {
+    KB_PROTOCOL_BLE,
+    KB_PROTOCOL_USB
+};
 
 //初始化存储
 void storage_init(void);

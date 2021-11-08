@@ -206,8 +206,8 @@ static void hids_init(void)
     hids_init_obj.p_outp_rep_array = output_report_array;
     hids_init_obj.feature_rep_count = 0;
     hids_init_obj.p_feature_rep_array = NULL;
-    hids_init_obj.rep_map.data_len = sizeof(hid_descriptor);
-    hids_init_obj.rep_map.p_data = hid_descriptor;
+    hids_init_obj.rep_map.data_len = sizeof(ble_hid_descriptor);
+    hids_init_obj.rep_map.p_data = ble_hid_descriptor;
     hids_init_obj.hid_information.bcd_hid = BASE_USB_HID_SPEC_VERSION;
     hids_init_obj.hid_information.b_country_code = 0;
     hids_init_obj.hid_information.flags = HID_INFO_FLAG_REMOTE_WAKE_MSK | HID_INFO_FLAG_NORMALLY_CONNECTABLE_MSK;
@@ -294,12 +294,15 @@ static void send_next_buffer(void)
     }
 }
 
-void keys_send(uint8_t report_id, uint8_t key_pattern_len, uint8_t* p_key_pattern)
+void ble_keys_send(uint8_t report_id, uint8_t key_pattern_len, uint8_t* p_key_pattern)
 {
     ret_code_t err_code;
     bool buffer_in = false;
     uint8_t report_index;
     buffer_entry_t* element;
+    if(m_conn_handle == BLE_CONN_HANDLE_INVALID){
+        return;
+    }
     if(!(buffer_list.wp == buffer_list.rp)){
         send_next_buffer();
         buffer_in = true;

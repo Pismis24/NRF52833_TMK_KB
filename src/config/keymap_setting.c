@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "ble.h"
 #include "ble_main.h"
+#include "kb_evt.h"
 
 const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KEYMAP(
@@ -37,7 +38,7 @@ const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
     KEYMAP(
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_FN2,
-        KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_FN4,  KC_TRNS,
+        KC_TRNS, KC_FN5,  KC_FN6,  KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_FN4,  KC_TRNS,
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_FN3,
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, 
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,          KC_TRNS, KC_PGUP,
@@ -49,6 +50,8 @@ const uint8_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 enum action_func_nme{
     DEL_BOND,
     BLE_CONN_TOGGLE,
+    PROTOCOL_SWITCH_BLE,
+    PROTOCOL_SWITCH_USB
 };
 
 const action_t fn_actions[] = {
@@ -56,7 +59,9 @@ const action_t fn_actions[] = {
     ACTION_BACKLIGHT_STEP(),
     ACTION_BACKLIGHT_TOGGLE(),
     ACTION_FUNCTION(DEL_BOND),
-    ACTION_FUNCTION(BLE_CONN_TOGGLE)
+    ACTION_FUNCTION(BLE_CONN_TOGGLE),
+    ACTION_FUNCTION(PROTOCOL_SWITCH_BLE),
+    ACTION_FUNCTION(PROTOCOL_SWITCH_USB),
 };
 
 
@@ -86,5 +91,15 @@ void action_function(keyrecord_t *record, uint8_t id, uint8_t opt)
             ble_conn_toggle();
         }
         break;
+    case PROTOCOL_SWITCH_BLE:
+        if(record->event.pressed){
+            trig_kb_event_param(KB_EVT_PROTOCOL_SWITCH, SUBEVT_PROTOCOL_BLE);
+        }
+        break;
+    case PROTOCOL_SWITCH_USB:
+        if(record->event.pressed){
+            trig_kb_event_param(KB_EVT_PROTOCOL_SWITCH, SUBEVT_PROTOCOL_USB);
+        }
+    break;
     }
 }

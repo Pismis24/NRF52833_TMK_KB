@@ -161,6 +161,9 @@ static void kb_event_adc_handler(kb_event_type_t event, void * p_arg)
                     break;
             }
         break;
+        case KB_EVT_SLEEP:
+            app_timer_stop(voltage_meas_timer);
+            nrfx_saadc_uninit();
         default:
             break;
     }

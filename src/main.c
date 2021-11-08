@@ -145,11 +145,6 @@ int main()
     trig_kb_event(KB_EVT_INIT);
     keyboard_init();// keyboard_task_timer and matrix
 
-
-    app_sched_execute();
-    bool erase_bonds = false;
-    advertising_start(erase_bonds);
-
     trig_kb_event(KB_EVT_START);
     keyboard_start();
 

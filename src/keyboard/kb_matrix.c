@@ -247,28 +247,45 @@ static void matrix_deinit(void)
 static void matrix_wakeup_prepare(void)
 {
 #ifdef DIODES_ROW2COL
-    for(uint8_t idx=0; idx<MATRIX_COLS; idx++){
-        nrf_gpio_cfg_sense_input(
-            col_pins[idx], 
-            NRF_GPIO_PIN_PULLDOWN, 
-            NRF_GPIO_PIN_SENSE_HIGH
-        );
+    for(uint8_t idx=0; idx<KEY_COLS; idx++){
+        nrf_gpio_cfg_sense_input(col_pins[idx], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
     }
-    for(uint8_t idx=0; idx<MATRIX_ROWS; idx++){
-        nrf_gpio_cfg_output(row_pins[idx]);
-        nrf_gpio_pin_set(row_pins[idx]);
+    for(uint8_t idx=0; idx<KEY_ROWS; idx++){
+        nrf_gpio_cfg(
+        row_pins[idx],
+        NRF_GPIO_PIN_DIR_INPUT,
+        NRF_GPIO_PIN_INPUT_DISCONNECT,
+        NRF_GPIO_PIN_PULLUP,
+        NRF_GPIO_PIN_S0S1,
+        NRF_GPIO_PIN_NOSENSE
+        );
     }
 #else
     for(uint8_t idx=0; idx<MATRIX_COLS; idx++){
-        nrf_gpio_cfg_sense_input(
-            col_pins[idx], 
-            NRF_GPIO_PIN_PULLUP, 
-            NRF_GPIO_PIN_SENSE_LOW
-        );
+        nrf_gpio_cfg_sense_input(col_pins[idx], NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
     }
     for(uint8_t idx=0; idx<MATRIX_ROWS; idx++){
-        nrf_gpio_cfg_output(row_pins[idx]);
-        nrf_gpio_pin_clear(row_pins[idx]);
+        nrf_gpio_cfg(
+        row_pins[idx],
+        NRF_GPIO_PIN_DIR_INPUT,
+        NRF_GPIO_PIN_INPUT_DISCONNECT,
+        NRF_GPIO_PIN_PULLDOWN,
+        NRF_GPIO_PIN_S0S1,
+        NRF_GPIO_PIN_NOSENSE
+        );
     }
 #endif
+    NRF_LOG_INFO("matrix wake up perpared");
 }
+
+static void matrix_event_handle(kb_event_type_t event, void * p_arg)
+{
+    switch(event){
+        case KB_EVT_SLEEP:
+            matrix_deinit();
+            matrix_wakeup_prepare();
+        break;
+    }
+}
+
+KB_EVT_HANDLER(matrix_event_handle);

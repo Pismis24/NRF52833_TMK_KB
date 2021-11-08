@@ -17,22 +17,22 @@ static uint8_t keyboard_leds()
 
 static void send_keyboard(report_keyboard_t * report)
 {
-    keys_send(0, 8, report->raw);
+    ble_keys_send(0, 8, report->raw);
 }
 
 static void send_mouse(report_mouse_t * report)
 {
-    keys_send(REPORT_ID_MOUSE, sizeof(report_mouse_t), (uint8_t*)report);
+    ble_keys_send(REPORT_ID_MOUSE, sizeof(report_mouse_t), (uint8_t*)report);
 }
 
 static void send_system(uint16_t report)
 {
-    keys_send(REPORT_ID_SYSTEM, 2, (uint8_t*)&report);
+    ble_keys_send(REPORT_ID_SYSTEM, 2, (uint8_t*)&report);
 }
 
 static void send_consumer(uint16_t data)
 {
-    keys_send(REPORT_ID_CONSUMER, 2, (uint8_t*)&data);
+    ble_keys_send(REPORT_ID_CONSUMER, 2, (uint8_t*)&data);
 }
 
 host_driver_t ble_driver = {

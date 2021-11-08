@@ -62,6 +62,7 @@ static void powersave_timer_reset(void)
 
 static void powersave_event_handle(kb_event_type_t event, void * p_arg)
 {
+    ret_code_t err_code;
     uint8_t param = (uint32_t)p_arg;
     switch(event){
     case KB_EVT_INIT:
@@ -75,7 +76,12 @@ static void powersave_event_handle(kb_event_type_t event, void * p_arg)
             powersave_timer_reset();
         }
         break;
+    case KB_EVT_SLEEP:
+        err_code = app_timer_stop(powersave_timer);
+        APP_ERROR_CHECK(err_code);
+    break;
     }
+    
 }
 
 KB_EVT_HANDLER(powersave_event_handle);

@@ -5,20 +5,37 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 
+#include "nrf_soc.h"
+
 #include "app_error.h"
 
 #include "app_timer.h"
+#include "nrfx_timer.h"
 
 #include "kb_evt.h"
 
 #include "config.h"
 
+#define FINAL_SLEEP_TIMEOUT APP_TIMER_TICKS(1000)
+
 APP_TIMER_DEF(auto_sleep_timer);
+APP_TIMER_DEF(final_sleep_timer);
 
 static void auto_sleep_timeout_handle(void * p_context)
 {
-    trig_kb_event(KB_EVT_SLEEP);
-    NRF_LOG_INFO("Sleep mode enter");
+    NRF_LOG_INFO("Sleep mode prepare");
+    trig_kb_event(KB_EVT_SLEEP); 
+}
+
+static void sleep_actual_enter(void * p_context)
+{
+    //deinit kbd task hardware timer
+    //watch dog is feeded by keyboard task so timer need to be stop lastly
+    const nrfx_timer_t kbd_task_timer = NRFX_TIMER_INSTANCE(KBD_TASK_TIMER);
+    nrfx_timer_uninit(&kbd_task_timer);
+    //enter sleep mode
+    ret_code_t err_code = sd_power_system_off();
+    
 }
 
 static void auto_sleep_timer_init(void)
@@ -29,6 +46,10 @@ static void auto_sleep_timer_init(void)
         auto_sleep_timeout_handle);
     APP_ERROR_CHECK(err_code);
     NRF_LOG_INFO("Auto sleep timer init");
+    err_code = app_timer_create(&final_sleep_timer,
+        APP_TIMER_MODE_SINGLE_SHOT,
+        sleep_actual_enter
+    );
 }
 
 static void auto_sleep_timer_start(void)
@@ -53,6 +74,7 @@ static void auto_sleep_timer_reset(void)
 
 static void auto_sleep_event_handle(kb_event_type_t event, void * p_arg)
 {
+    ret_code_t err_code;
     uint8_t param = (uint32_t)p_arg;
     switch(event){
     case KB_EVT_INIT:
@@ -66,6 +88,9 @@ static void auto_sleep_event_handle(kb_event_type_t event, void * p_arg)
             auto_sleep_timer_reset();
         }
         break;
+    case KB_EVT_SLEEP:
+        err_code = app_timer_start(final_sleep_timer, FINAL_SLEEP_TIMEOUT, NULL);
+        APP_ERROR_CHECK(err_code);
     }
 }
 

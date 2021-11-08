@@ -185,8 +185,22 @@ static void bnr_led_deinit(void)
     }
     err_code = app_timer_stop(bnr_led_timer);
     APP_ERROR_CHECK(err_code);
-    nrf_gpio_cfg_default(BNR_LED_B);
-    nrf_gpio_cfg_default(BNR_LED_R);
+    nrf_gpio_cfg(
+        BNR_LED_B,
+        NRF_GPIO_PIN_DIR_INPUT,
+        NRF_GPIO_PIN_INPUT_DISCONNECT,
+        NRF_GPIO_PIN_PULLDOWN,
+        NRF_GPIO_PIN_S0S1,
+        NRF_GPIO_PIN_NOSENSE
+    );
+    nrf_gpio_cfg(
+        BNR_LED_R,
+        NRF_GPIO_PIN_DIR_INPUT,
+        NRF_GPIO_PIN_INPUT_DISCONNECT,
+        NRF_GPIO_PIN_PULLDOWN,
+        NRF_GPIO_PIN_S0S1,
+        NRF_GPIO_PIN_NOSENSE
+    );
 }
 
 static void bnr_led_set(enum bnr_light_color color)
@@ -307,9 +321,6 @@ static void keyboard_led_event_handler(kb_event_type_t event, void * p_arg)
             err_code = app_timer_start(bnr_led_timer, BNR_LED_DRIVE_INTERVAL, NULL);
             APP_ERROR_CHECK(err_code);
             break;
-        /*case KB_EVT_SLEEP:
-            keyboard_led_deinit();
-            break;*/
         case KB_EVT_BLE:
             switch(param){
                 case KB_BLE_ADV_FAST:
@@ -324,6 +335,8 @@ static void keyboard_led_event_handler(kb_event_type_t event, void * p_arg)
                     break;
             }
             break;
+        case KB_EVT_SLEEP:
+            keyboard_led_deinit();
         default:
             break;
     }

@@ -167,10 +167,10 @@ static void encoder_event_handler(kb_event_type_t event, void * p_arg)
         case KB_EVT_START:
             encoder_start();
             break;
-        /*case KB_EVT_SLEEP:
+        case KB_EVT_SLEEP:
             encoder_deinit();
             encoder_wakeup_prepare();
-            break;*/
+            break;
         default:
             break;
     }

@@ -10,7 +10,8 @@ typedef enum kb_event_lst {
     KB_EVT_SLEEP,
     KB_EVT_USB,
     KB_EVT_BLE,
-    KB_EVT_TMK_HOOK
+    KB_EVT_TMK_HOOK,
+    KB_EVT_PROTOCOL_SWITCH
 } kb_event_type_t;
 
 enum kb_ble_evt_lst {
@@ -30,6 +31,11 @@ enum kb_powersave_subevt {
 enum tmk_hook_evt_lst {
     TMK_HOOK_LOOP,
     TMK_HOOK_MATRIX_CHG,
+};
+
+enum subevt_protocol_lst {
+    SUBEVT_PROTOCOL_BLE,
+    SUBEVT_PROTOCOL_USB
 };
 
 

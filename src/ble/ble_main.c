@@ -34,7 +34,7 @@
 
 #include "kb_evt.h"
 
-#define DEVICE_NAME                         "Nordic_Keyboard"                          /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                         "TMK_KB_nRF52833"                          /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME                   "NordicSemiconductor"                      /**< Manufacturer. Will be passed to Device Information Service. */
 
 #define APP_BLE_OBSERVER_PRIO               3                                          /**< Application's BLE observer priority. You shouldn't need to modify this value. */
@@ -53,8 +53,8 @@
 
 
 /*lint -emacro(524, MIN_CONN_INTERVAL) // Loss of precision */
-#define MIN_CONN_INTERVAL                   MSEC_TO_UNITS(7.5, UNIT_1_25_MS)           /**< Minimum connection interval (7.5 ms) */
-#define MAX_CONN_INTERVAL                   MSEC_TO_UNITS(30, UNIT_1_25_MS)            /**< Maximum connection interval (30 ms). */
+#define MIN_CONN_INTERVAL                   MSEC_TO_UNITS(7.5, UNIT_1_25_MS)           /**< Minimum connection interval (20 ms) */
+#define MAX_CONN_INTERVAL                   MSEC_TO_UNITS(30, UNIT_1_25_MS)            /**< Maximum connection interval (40 ms). */
 #define SLAVE_LATENCY                       6                                          /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                    MSEC_TO_UNITS(430, UNIT_10_MS)             /**< Connection supervisory timeout (430 ms). */
 
@@ -81,7 +81,7 @@ uint16_t          m_conn_handle  = BLE_CONN_HANDLE_INVALID;  /**< Handle of the 
 
 static pm_peer_id_t      m_peer_id;                                 /**< Device reference handle to the current bonded central. */
 
-static bool manual_disconnect = false;
+static bool on_adv = false;
 static bool earse_bond = false;
 
 static ble_uuid_t m_adv_uuids[] = {
@@ -366,43 +366,43 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
         case BLE_ADV_EVT_DIRECTED_HIGH_DUTY:
             NRF_LOG_INFO("High Duty Directed advertising.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_FAST);
-
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_DIRECTED:
             NRF_LOG_INFO("Directed advertising.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_SLOW);
-
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_FAST:
             NRF_LOG_INFO("Fast advertising.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_FAST);
-
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_SLOW:
             NRF_LOG_INFO("Slow advertising.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_SLOW);
-
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_FAST_WHITELIST:
             NRF_LOG_INFO("Fast advertising with whitelist.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_FAST);
-
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_SLOW_WHITELIST:
             NRF_LOG_INFO("Slow advertising with whitelist.");
             trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_SLOW);
-
+            on_adv = true;
             break;
 
         case BLE_ADV_EVT_IDLE:
-            NRF_LOG_INFO("ble adv idle, enter sleep mode");
-            trig_kb_event(KB_EVT_SLEEP);
-
+            NRF_LOG_INFO("ble adv idle, parepare to sleep");
+            on_adv = false;
+            trig_kb_event(KB_EVT_SLEEP); 
             break;
 
         case BLE_ADV_EVT_WHITELIST_REQUEST:
@@ -477,8 +477,8 @@ static uint8_t current_tx = 6; // 0dbm default.
 static void ble_rssi_change(int8_t rssi)
 {
     NRF_LOG_INFO("current rssi %d", rssi);
-    const int8_t tx_power_table[] = { -40, -20, -16, -12, -8, -4, 0, 3, 4};
-    if (rssi >= -65 && current_tx > 0)
+    const int8_t tx_power_table[] = { -40, -20, -16, -12, -8, -4, 0, 2, 4, 6, 7, 8};
+    if (rssi >= -60 && current_tx > 0)
         current_tx--;
     else if (rssi <= -75 && current_tx < sizeof(tx_power_table) - 1)
         current_tx++;
@@ -502,6 +502,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
     {
         case BLE_GAP_EVT_CONNECTED:
             NRF_LOG_INFO("Connected");
+            on_adv = false;
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
             APP_ERROR_CHECK(err_code);
@@ -673,9 +674,6 @@ static void advertising_init(void)
 
 void ble_conn_close(void)
 {
-    if(manual_disconnect){
-        return;
-    }
     NRF_LOG_INFO("conn close");
     // Prevent device from advertising on disconnect.
     ble_adv_modes_config_t config;
@@ -687,13 +685,12 @@ void ble_conn_close(void)
     } else {
         sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
     }
-    manual_disconnect = true;
     trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_STOP);
 }
 
 void ble_conn_restart(void)
 {
-    if(!manual_disconnect){
+    if(on_adv || (m_conn_handle != BLE_CONN_HANDLE_INVALID)){
         return;
     }
     NRF_LOG_INFO("conn restart");
@@ -704,12 +701,12 @@ void ble_conn_restart(void)
     ble_advertising_modes_config_set(&m_advertising, &config);
 
     advertising_start(false);
-    manual_disconnect = false;
+
 }
 
 void ble_conn_toggle(void)
 {
-    if(!manual_disconnect){
+    if(on_adv || (m_conn_handle != BLE_CONN_HANDLE_INVALID)){
         ble_conn_close();
     }
     else{

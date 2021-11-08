@@ -5,7 +5,7 @@
 #define INPUT_REP_KEYBOARD_ID 0x7f /**< Id of reference to Keyboard Input Report. */
 #define OUTPUT_REP_KEYBOARD_ID 0x7f /**< Id of reference to Keyboard Output Report. */
 
-static uint8_t ble_hid_descriptor[] = {
+static uint8_t usb_hid_descriptor[] = {
     0x05, 0x01, // Usage Page (Generic Desktop)
     0x09, 0x06, // Usage (Keyboard)
     0xA1, 0x01, // Collection (Application)
