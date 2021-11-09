@@ -5,7 +5,7 @@
 #include "nrf_log_default_backends.h"
 
 #include "ble_svc_hid.h"
-#include "ble_service.h"
+#include "ble_main.h"
 #include "host_driver.h"
 #include "ble_protocol.h"
 

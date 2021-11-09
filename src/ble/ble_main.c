@@ -49,7 +49,7 @@
 #define APP_ADV_SLOW_INTERVAL               0x0C80                                     /**< Slow advertising interval (in units of 0.625 ms. This value corrsponds to 2 seconds). */
 
 #define APP_ADV_FAST_DURATION               3000                                       /**< The advertising duration of fast advertising in units of 10 milliseconds. */
-#define APP_ADV_SLOW_DURATION               12000                                      /**< The advertising duration of slow advertising in units of 10 milliseconds. */
+#define APP_ADV_SLOW_DURATION               9000                                      /**< The advertising duration of slow advertising in units of 10 milliseconds. */
 
 
 /*lint -emacro(524, MIN_CONN_INTERVAL) // Loss of precision */

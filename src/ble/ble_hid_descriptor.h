@@ -122,5 +122,5 @@ static uint8_t ble_hid_descriptor[] = {
     0x95, 0x01, //   REPORT_COUNT (1)
     0x81, 0x00, //   INPUT (Data,Array,Abs)
     0xc0, // END_COLLECTION
-#endif
 };
+#endif

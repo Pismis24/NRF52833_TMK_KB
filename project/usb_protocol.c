@@ -2,6 +2,7 @@
 
 #include "host_driver.h"
 #include "usb_protocol.h"
+#include "usbd_hid.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -18,25 +19,25 @@ static uint8_t keyboard_leds()
 
 static void send_keyboard(report_keyboard_t * report)
 {
-    //usb_keys_send(0, 8, report->raw);
+    usb_kbd_keys_send(report);
     NRF_LOG_INFO("send keyboard");
 }
 
 static void send_mouse(report_mouse_t * report)
 {
-    //usb_keys_send(REPORT_ID_MOUSE, sizeof(report_mouse_t), (uint8_t*)report);
+    usb_mouse_send(report);
     NRF_LOG_INFO("send mouse");
 }
 
 static void send_system(uint16_t report)
 {
-    //usb_keys_send(REPORT_ID_SYSTEM, 2, (uint8_t*)&report);
+    usb_system_send(report);
     NRF_LOG_INFO("send system");
 }
 
 static void send_consumer(uint16_t data)
 {
-    //usb_keys_send(REPORT_ID_CONSUMER, 2, (uint8_t*)&data);
+    usb_consumer_send(data);
     NRF_LOG_INFO("send consumer");
 }
 

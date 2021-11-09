@@ -49,6 +49,9 @@
 #include "app_scheduler.h"
 #include "nrf_pwr_mgmt.h"
 
+#include "nrf_drv_power.h"
+#include "nrf_drv_clock.h"
+
 #include "keyboard.h"
 
 #include "tmk_driver.h"
@@ -56,7 +59,8 @@
 #include "kb_evt.h"
 #include "kb_storage.h"
 
-#include "ble_service.h"
+#include "ble_main.h"
+#include "usbd_hid.h"
 
 #define DEAD_BEEF 0xDEADBEEF
 
@@ -96,6 +100,13 @@ static void log_init(void)
     NRF_LOG_DEFAULT_BACKENDS_INIT();
 }
 
+static void clock_init(void)
+{
+    ret_code_t err_code;
+    err_code = nrf_drv_clock_init();
+    APP_ERROR_CHECK(err_code);
+}
+
 static void timer_init(void)
 {
 // init app_timer
@@ -126,6 +137,9 @@ static void idle_state_handle(void)
 {
     app_sched_execute();
     execute_kb_event();
+    app_sched_execute();
+    usbd_evt_process();
+    app_sched_execute();
     if (NRF_LOG_PROCESS() == false)
     {
         nrf_pwr_mgmt_run();
@@ -137,10 +151,13 @@ int main()
 {
     set_gpio_voltage_3V3();
     log_init();
+    clock_init();
     timer_init();
     scheduler_init();
     storage_init();
+    usbd_perpare();
     ble_init();
+    
 
     trig_kb_event(KB_EVT_INIT);
     keyboard_init();// keyboard_task_timer and matrix

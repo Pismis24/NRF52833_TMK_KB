@@ -84,12 +84,6 @@
         <file file_name="../src/tmk_glue/tmk_hook.c" />
       </folder>
       <folder Name="ble">
-        <file file_name="../src/ble/ble_service.c">
-          <configuration Name="Debug" build_exclude_from_build="Yes" />
-        </file>
-        <file file_name="../src/ble/ble_service.h">
-          <configuration Name="Debug" build_exclude_from_build="Yes" />
-        </file>
         <file file_name="../src/ble/ble_hid_descriptor.h" />
         <file file_name="../src/ble/ble_svc_hid.c" />
         <file file_name="../src/ble/ble_svc_hid.h" />
@@ -111,9 +105,9 @@
       <folder Name="usbd">
         <file file_name="../src/usb/usbd_hid.c" />
         <file file_name="../src/usb/usbd_hid.h" />
-        <configuration Name="Debug" build_exclude_from_build="Yes" />
+        <configuration Name="Debug" build_exclude_from_build="No" />
         <file file_name="../src/usb/usb_hid_descriptor.h">
-          <configuration Name="Debug" build_exclude_from_build="Yes" />
+          <configuration Name="Debug" build_exclude_from_build="No" />
         </file>
       </folder>
     </folder>
@@ -178,6 +172,7 @@
         <file file_name="../nrf_sdk/components/libraries/usbd/app_usbd_serial_num.c" />
         <file file_name="../nrf_sdk/components/libraries/usbd/app_usbd_string_desc.c" />
         <file file_name="../nrf_sdk/components/libraries/usbd/class/hid/app_usbd_hid.c" />
+        <file file_name="../nrf_sdk/components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.c" />
       </folder>
       <folder Name="nRF_Drivers">
         <file file_name="../nrf_sdk/integration/nrfx/legacy/nrf_drv_clock.c" />
@@ -194,6 +189,12 @@
         <file file_name="../nrf_sdk/modules/nrfx/drivers/src/nrfx_saadc.c" />
         <file file_name="../nrf_sdk/modules/nrfx/drivers/src/nrfx_timer.c" />
         <file file_name="../nrf_sdk/modules/nrfx/drivers/src/nrfx_wdt.c" />
+        <file file_name="../nrf_sdk/modules/nrfx/drivers/src/nrfx_usbd.c" />
+        <file file_name="../nrf_sdk/modules/nrfx/drivers/src/nrfx_usbd_errata.h" />
+        <file file_name="../nrf_sdk/integration/nrfx/legacy/nrf_drv_usbd.h" />
+        <file file_name="../nrf_sdk/integration/nrfx/legacy/nrf_drv_usbd_errata.h" />
+        <file file_name="../nrf_sdk/modules/nrfx/drivers/src/nrfx_power.c" />
+        <file file_name="../nrf_sdk/integration/nrfx/legacy/nrf_drv_power.c" />
       </folder>
       <folder Name="nRF_BLE_Services">
         <file file_name="../nrf_sdk/components/ble/ble_services/ble_bas/ble_bas.c" />
