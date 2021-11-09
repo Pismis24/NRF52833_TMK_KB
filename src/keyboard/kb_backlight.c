@@ -105,7 +105,9 @@ static void kb_backlight_event_handler(kb_event_type_t event, void * p_arg)
         }
         break;
     case KB_EVT_SLEEP:
-        nrfx_pwm_uninit(&m_pwm0);
+        if(!in_powersave){
+            nrfx_pwm_uninit(&m_pwm0);
+        }
         nrf_gpio_cfg_default(BACKLIGHT_PIN);
     break;
     default:

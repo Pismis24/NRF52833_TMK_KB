@@ -66,7 +66,7 @@ static const uint8_t col_pins[KEY_COLS] = {
 
 /*进入省电状态设置*/
 #define POWERSAVE_ENABLE
-#define POWERSAVE_TIMEOUT 180 // in second
+#define POWERSAVE_TIMEOUT 60 // in second
 #if defined(POWERSAVE_ENABLE) && !defined(POWERSAVE_TIMEOUT)
     #define POWERSAVE_TIMEOUT 60
 #endif
