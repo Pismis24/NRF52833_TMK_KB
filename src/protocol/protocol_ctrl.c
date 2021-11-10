@@ -13,7 +13,6 @@
 #include "kb_storage.h"
 
 #include "ble_main.h"
-#include "usbd_hid.h"
 
 #include "ble_protocol.h"
 #include "usb_protocol.h"
@@ -24,15 +23,13 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 
-#define DEFAULT_PROTOCOL KB_PROTOCOL_BLE
-
 typedef enum protocol_lst {
     PROTOCOL_BLE,
     PROTOCOL_USB
 } protocol_type_t;
 
 static store_data_t stored_data;
-static uint8_t current_protocol = DEFAULT_PROTOCOL;
+static uint8_t current_protocol = KB_PROTOCOL_UNSET;
 static host_driver_t current_driver;
 
 static void protocol_first_set(void)
@@ -40,35 +37,19 @@ static void protocol_first_set(void)
     ret_code_t err_code;
     //read current protocol
     storage_read(&stored_data);
-    current_protocol = stored_data.kb_current_protocol;
-
-    switch(current_protocol)
+    switch(stored_data.kb_current_protocol)
     {
     case KB_PROTOCOL_BLE:
-        advertising_start(false);
-        
-        current_driver = ble_driver;
-        host_set_driver(&current_driver);
-
-        NRF_LOG_INFO("BLE HID Protocol Set");
-
+        trig_kb_event_param(KB_EVT_PROTOCOL_SWITCH, SUBEVT_PROTOCOL_BLE);
+        NRF_LOG_INFO("Stored Protocol is BLE");
     break;
     case KB_PROTOCOL_USB:
-        current_driver = usb_driver;
-        host_set_driver(&current_driver);
-
-        NRF_LOG_INFO("USB HID Protocol Set");
+        trig_kb_event_param(KB_EVT_PROTOCOL_SWITCH, SUBEVT_PROTOCOL_USB);
+        NRF_LOG_INFO("Stored Protocol is USB");
     break;
     default:
-        advertising_start(false);
-
-        current_driver = ble_driver;
-        host_set_driver(&current_driver);
-
-        stored_data.kb_current_protocol = KB_PROTOCOL_BLE;
-        storage_write(stored_data);
+        trig_kb_event_param(KB_EVT_PROTOCOL_SWITCH, SUBEVT_PROTOCOL_BLE);
         NRF_LOG_INFO("No Protocol data found");
-        NRF_LOG_INFO("BLE HID Protocol Set");
     break;
     }
 }
@@ -109,7 +90,6 @@ static void protocol_switch(protocol_type_t protocol_type)
 
 static void protocol_evt_handler(kb_event_type_t event, void * p_arg)
 {
-    NRF_LOG_DEBUG("protocol evt handler");
     ret_code_t err_code;
     uint8_t param = (uint32_t)p_arg;
     switch(event){
@@ -120,11 +100,13 @@ static void protocol_evt_handler(kb_event_type_t event, void * p_arg)
     case KB_EVT_PROTOCOL_SWITCH:
         switch(param){
             case SUBEVT_PROTOCOL_BLE:
+                NRF_LOG_INFO("current protocol %d", current_protocol);
                 if(current_protocol != KB_PROTOCOL_BLE){
                     protocol_switch(PROTOCOL_BLE);
                 }
             break;
             case SUBEVT_PROTOCOL_USB:
+                NRF_LOG_INFO("current protocol %d", current_protocol);
                 if(current_protocol != KB_PROTOCOL_USB){
                     protocol_switch(PROTOCOL_USB);
                 }

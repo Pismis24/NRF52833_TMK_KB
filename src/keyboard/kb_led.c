@@ -86,8 +86,6 @@ static bool red_active; //红色灯在当前半周是否应该点亮
 static bool blue_active;//蓝色灯在当前半周是否应该点亮
 static bool red_blink; //红灯当前是否闪烁
 static bool blue_blink;//蓝灯当前是否闪烁
-static bool red_state; //闪烁前红灯状态
-static bool blue_state; //闪烁前蓝灯状态
 
 APP_TIMER_DEF(bnr_led_timer);
 APP_TIMER_DEF(bnr_led_blink_timer);
@@ -203,31 +201,7 @@ static void bnr_led_deinit(void)
     );
 }
 
-static void bnr_led_set(enum bnr_light_color color)
-{
-    switch(color){
-        case BNR_COLOR_NO:
-            red_active = false;
-            blue_active = false;
-            break;
-        case BNR_COLOR_RED:
-            red_active = true;
-            blue_active = false;
-            break;
-        case BNR_COLOR_BLUE:
-            red_active = false;
-            blue_active = true;
-            break;
-        case BNR_COLOR_BOTH:
-            red_active = true;
-            blue_active = true;
-            break;
-        default:
-            break;
-    }
-}
-
-static void bnr_led_blink_set(enum bnr_blink_color color, enum bnr_blink_freq freq)
+static void bnr_led_blink_freq_set(enum bnr_blink_freq freq)
 {
     ret_code_t err_code;
     //若原来处于闪烁状态则停止并重新设置闪烁间隔
@@ -235,12 +209,7 @@ static void bnr_led_blink_set(enum bnr_blink_color color, enum bnr_blink_freq fr
         err_code = app_timer_stop(bnr_led_blink_timer);
         APP_ERROR_CHECK(err_code);
         blink_timer_state = false;
-        red_active = red_state;
-        blue_active = blue_state;
     }
-    //保存原来的点亮状态
-    red_state = red_active;
-    blue_state = blue_active;
     //重设闪烁频率
     switch(freq){
         case BNR_BLINK_FAST:
@@ -256,26 +225,41 @@ static void bnr_led_blink_set(enum bnr_blink_color color, enum bnr_blink_freq fr
         default:
             break;
     }
-    //设置颜色
+}
+
+static void bnr_led_blink_color_set(enum bnr_blink_color color)
+{
     switch(color){
         case BNR_BLINK_RED:
             red_blink = true;
-            blue_blink = false;
             break;
         case BNR_BLINK_BLUE:
-            red_blink = false;
             blue_blink = true;
             break;
         case BNR_BLINK_BOTH:
-            red_blink = true;
             blue_blink = true;
-            break;
-        default:
-            red_blink = false;
-            blue_blink = false;
+            red_blink = true;
             break;
     }
 }
+
+
+static void bnr_led_blink_color_clear(enum bnr_blink_color color)
+{
+    switch(color){
+        case BNR_BLINK_RED:
+            red_blink = false;
+            break;
+        case BNR_BLINK_BLUE:
+            blue_blink = false;
+            break;
+        case BNR_BLINK_BOTH:
+            blue_blink = false;
+            red_blink = false;
+            break;
+    }
+}
+
 
 
 static void bnr_led_blink_stop(void)
@@ -285,11 +269,10 @@ static void bnr_led_blink_stop(void)
         err_code = app_timer_stop(bnr_led_blink_timer);
         APP_ERROR_CHECK(err_code);
         blink_timer_state = false;
-        //恢复原点亮状态
-        red_active = red_state;
-        blue_active = blue_state;
         red_blink = false;
         blue_blink = false;
+        red_active = false;
+        blue_active = false;
     }
 }
 
@@ -305,6 +288,21 @@ static void keyboard_led_deinit(void)
 {
     nrf_gpio_cfg_default(CAPS_LED);
     bnr_led_deinit();
+}
+
+static bool usbd_is_started = false;
+static bool current_protocol_is_usb;
+
+static void usb_protocol_led_process(void)
+{
+    if(current_protocol_is_usb && !usbd_is_started){
+        bnr_led_blink_color_set(BNR_BLINK_RED);
+        bnr_led_blink_freq_set(BNR_BLINK_FAST);
+        NRF_LOG_INFO("Red blink set");
+    }
+    else{
+        bnr_led_blink_color_clear(BNR_BLINK_RED);
+    }
 }
 
 static void keyboard_led_event_handler(kb_event_type_t event, void * p_arg)
@@ -324,19 +322,45 @@ static void keyboard_led_event_handler(kb_event_type_t event, void * p_arg)
         case KB_EVT_BLE:
             switch(param){
                 case KB_BLE_ADV_FAST:
-                    bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_FAST);
+                    bnr_led_blink_freq_set(BNR_BLINK_FAST);
+                    bnr_led_blink_color_set(BNR_BLINK_BLUE);
                     break;
                 case KB_BLE_ADV_SLOW:
-                    bnr_led_blink_set(BNR_BLINK_BLUE, BNR_BLINK_SLOW);
+                    bnr_led_blink_freq_set(BNR_BLINK_SLOW);
+                    bnr_led_blink_color_set(BNR_BLINK_BLUE);
                     break;
                 case KB_BLE_GAP_CONN:
                 case KB_BLE_ADV_STOP:
-                    bnr_led_blink_stop();
+                    bnr_led_blink_color_clear(BNR_BLINK_BLUE);
                     break;
             }
             break;
+        case KB_EVT_USB:
+            switch(param){
+                case KB_USB_START:
+                    usbd_is_started = true;
+                break;
+                case KB_USB_STOP:
+                    usbd_is_started = false;
+                break;
+            }
+            usb_protocol_led_process();
+        break;
+        case KB_EVT_PROTOCOL_SWITCH:
+            NRF_LOG_INFO("KB_EVT_PROTOCOL_SWH, sub %d", param);
+            switch(param){
+                case SUBEVT_PROTOCOL_BLE:
+                    current_protocol_is_usb = false;
+                    break;
+                case SUBEVT_PROTOCOL_USB:
+                    current_protocol_is_usb = true;
+                    break;
+            }
+            usb_protocol_led_process();     
+        break;
         case KB_EVT_SLEEP:
             keyboard_led_deinit();
+        break;
         default:
             break;
     }

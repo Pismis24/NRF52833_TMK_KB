@@ -155,10 +155,10 @@ int main()
     timer_init();
     scheduler_init();
     storage_init();
-    usbd_perpare();
+
+    usbd_prepare();
     ble_init();
     
-
     trig_kb_event(KB_EVT_INIT);
     keyboard_init();// keyboard_task_timer and matrix
 

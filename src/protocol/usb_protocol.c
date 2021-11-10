@@ -14,31 +14,27 @@
 static uint8_t keyboard_leds()
 {
     //return keyboard_led_val_usb;
-    return 0;
+    return keyboard_led_val_usbd;
 }
 
 static void send_keyboard(report_keyboard_t * report)
 {
     usb_kbd_keys_send(report);
-    NRF_LOG_INFO("send keyboard");
 }
 
 static void send_mouse(report_mouse_t * report)
 {
     usb_mouse_send(report);
-    NRF_LOG_INFO("send mouse");
 }
 
 static void send_system(uint16_t report)
 {
     usb_system_send(report);
-    NRF_LOG_INFO("send system");
 }
 
 static void send_consumer(uint16_t data)
 {
     usb_consumer_send(data);
-    NRF_LOG_INFO("send consumer");
 }
 
 host_driver_t usb_driver = {

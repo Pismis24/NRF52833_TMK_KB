@@ -98,9 +98,9 @@
       <folder Name="protocol">
         <file file_name="../src/protocol/ble_protocol.c" />
         <file file_name="../src/protocol/ble_protocol.h" />
-        <file file_name="usb_protocol.c" />
         <file file_name="../src/protocol/usb_protocol.h" />
         <file file_name="../src/protocol/protocol_ctrl.c" />
+        <file file_name="../src/protocol/usb_protocol.c" />
       </folder>
       <folder Name="usbd">
         <file file_name="../src/usb/usbd_hid.c" />
@@ -173,6 +173,7 @@
         <file file_name="../nrf_sdk/components/libraries/usbd/app_usbd_string_desc.c" />
         <file file_name="../nrf_sdk/components/libraries/usbd/class/hid/app_usbd_hid.c" />
         <file file_name="../nrf_sdk/components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.c" />
+        <file file_name="../nrf_sdk/components/libraries/usbd/class/hid/generic/app_usbd_hid_generic.c" />
       </folder>
       <folder Name="nRF_Drivers">
         <file file_name="../nrf_sdk/integration/nrfx/legacy/nrf_drv_clock.c" />

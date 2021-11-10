@@ -23,6 +23,13 @@ enum kb_ble_evt_lst {
     KB_BLE_GATT_TX_DONE,
 };
 
+enum kb_usb_evt_lst {
+    KB_USB_START,
+    KB_USB_STOP,
+    KB_USB_POWER_CONN,
+    KB_USB_POWER_DISCONN
+};
+
 enum kb_powersave_subevt {
     KB_POWERSAVE_ENTER,
     KB_POWERSAVE_EXIT

@@ -16,7 +16,7 @@ Nordic SDK版本：nRF5_SDK_17.0.2
 
 ## 目录结构
 
-* nrf_sdk/ 放置nordic SDK文件文件夹  
+* nrf_sdk/ 放置nordic SDK文件的文件夹  
 * project/ ses项目文件目录  
 * src/ 项目源码  
   * ble/ 蓝牙相关  
@@ -37,27 +37,27 @@ Nordic SDK版本：nRF5_SDK_17.0.2
 2. 下载nordic官方sdk：nRF5_SDK_17.0.2  
 3. 解压后将SDK中的**components**、**external**、**integration**、**modules**四个文件夹放入项目目录下的**nrf_sdk**文件夹中  
 4. 下载并安装**Segger Embedded Studio**（以下简称SES），使用SES打开项目目录下**project**文件夹中的**nrf52833_tmk_kb.emProject**项目工程文件
-5. 摁F7进行编译，再通过Jlink将固件写入芯片（没试过用别的）  
+5. 摁F7进行编译，再通过Jlink将固件写入芯片（别的没用过，不作评价）  
 
 - - -
 
 ## 项目当前状态
 
 * 键盘基本功能已完成，现在我就在用这个键盘写readme  
-* 蓝牙单模  
+* USB蓝牙双模
 * 电量检测并通过蓝牙BAS服务发送至电脑  
 * 支持编码器（EC11）  
 * 支持发送鼠标按键、多媒体按键  
-* 模式切换完成（尚未完成USB HID相关工作）
+* 模式切换完成
 * 动态发射功率
 * 键盘休眠唤醒（当前设定是10分钟无操作）
 
 - - -
 
-## 等待完成的功能
+## 待完成的工作
 
-* USB有线连接  
-* 功耗优化（有背光灯估计优化不到哪去）
+* 用的过程中把bug找出来并修复
+* 给代码写注释
 
 - - -
 
@@ -65,6 +65,24 @@ Nordic SDK版本：nRF5_SDK_17.0.2
 
 * ~~删除绑定后会报错卡死，看门狗将会重启系统，重新开始开机初始化到广播的流程（出错但还是能达到目的，曲线救国了属于是）~~  
   已解决，通过在**PM_EVT_PEERS_DELETE_SUCCEEDED**事件发生后直接重启系统解决
+
+- - -
+
+## 项目参考
+* https://github.com/Lotlab/nrf52-keyboard
+* https://github.com/sekigon-gonnoc/qmk_firmware/tree/nrf52
+* https://github.com/chie4hao/qmk_firmware_nrf52840
+* 以及Nordic SDK中的样例
+
+如果不是通过读、学甚至抄这些开源代码，我没法完成这版键盘固件，所以我十分感激这些愿意将成果开源出来的人们
+
+- - -
+
+## 特别鸣谢
+
+[JasonBroker](https://github.com/Jasonbroker)在B站上出的的教程，虽然没出完，但帮我解决了最困难的从无到有的问题
+[他的B站个人空间](https://space.bilibili.com/95393302)
+[从0开始制作键盘固件](https://www.bilibili.com/video/BV11X4y1w7Cr)
 
 - - -
 - - -
@@ -111,11 +129,11 @@ This firmware is written for my custom keyboard, some code was written specially
 ## Current Status
 
 * Basic functions of keyboard completed, I am now using this keyboard to write the readme
-* Bluetooth single mode
+* BLE and USB dual mode  
 * Battery level measure and upload via BLE_Battery Service
 * Support Encoder (EC11)
 * Support sending mouse keys and consumer keys
-* Can manually switch connection mode (with usb hid related work to be done)
+* Can manually switch connection mode  
 * Dynamic TX strength
 * Auto Sleep after 10mins of no input
 
@@ -123,8 +141,8 @@ This firmware is written for my custom keyboard, some code was written specially
 
 ## Works to be done
 
-* USB Connection
-* Power optimization
+* Finding and fixing bugs
+* Writing notes
   
 - - -
 
@@ -132,3 +150,22 @@ This firmware is written for my custom keyboard, some code was written specially
 
 * ~~Error occur when manually delete bond, will cause crash and system reset by watchdog(Well, the bonding process will begin after the reset, still work but rather annoying)~~  
   Fixed by trigger system reset after **PM_EVT_PEERS_DELETE_SUCCEEDED** event happened.
+
+- - -
+
+## Reference Projects
+
+* https://github.com/Lotlab/nrf52-keyboard
+* https://github.com/sekigon-gonnoc/qmk_firmware/tree/nrf52
+* https://github.com/chie4hao/qmk_firmware_nrf52840
+* Examples in Nordic SDK
+
+Without reading, learning and even copying these open sources codes, I cannot finish this project. I am grateful to these wonderful guys who open source their codes.  
+
+- - -
+
+## Special Thanks
+
+[JasonBroker](https://github.com/Jasonbroker)`s tutorials about how to construct a keyboard firmware from scratch, which helped me to overcome the obstacle of 0 to 1, though the series seems never ends.
+[His Bilibili Personal Page](https://space.bilibili.com/95393302)
+[Building Keyboard Firmware from Scratch](https://www.bilibili.com/video/BV11X4y1w7Cr)

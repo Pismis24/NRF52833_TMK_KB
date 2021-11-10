@@ -23,6 +23,7 @@ typedef struct
 }__attribute__((aligned(4))) store_data_t;
 
 enum protocol_types {
+    KB_PROTOCOL_UNSET = 0,
     KB_PROTOCOL_BLE,
     KB_PROTOCOL_USB
 };
