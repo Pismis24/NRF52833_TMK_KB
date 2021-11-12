@@ -32,10 +32,14 @@
 
 //USB KB LED state
 uint8_t keyboard_led_val_usbd = 0;
-//flag of usb device is started
-static bool usbd_is_started = false;
 //flag of usb device is pending report
 static bool m_report_pending = false;
+//flag of current protocol is usb
+static bool current_usb_protocol = false;
+//flag of usb connected
+static bool usb_power_conn = false;
+//flag of usb started
+static bool usb_started = false;
 
 //Setting keyboard hid interface
 void hid_kbd_user_ev_handler(app_usbd_class_inst_t const *p_inst, app_usbd_hid_user_event_t event);
@@ -123,12 +127,13 @@ static void kbd_report_queue_init(void)
 /*function of sending current*/
 static void kbd_key_buffer_send(void)
 {
-    if (kbd_report_queue_is_empty())
-    {
+    if (kbd_report_queue_is_empty()){
         return;
     }
-    if (m_report_pending)
-    {
+    if (!usb_started){
+        return;
+    }
+    if (m_report_pending){
         return;
     }
     ret_code_t err_code;
@@ -159,6 +164,9 @@ void usb_kbd_keys_send(report_keyboard_t *report)
 {
     if (!NRF_USBD->ENABLE)
     {
+        return;
+    }
+    if (!usb_started){
         return;
     }
     ret_code_t err_code;
@@ -210,6 +218,9 @@ void usb_mouse_send(report_mouse_t *report)
     {
         return;
     }
+    if (!usb_started){
+        return;
+    }
     if (m_report_pending)
     {
         return;
@@ -235,6 +246,9 @@ static void extra_key_send(uint8_t report_id, uint16_t data)
 {
     if (!NRF_USBD->ENABLE)
     {
+        return;
+    }
+    if (!usb_started){
         return;
     }
     if (m_report_pending)
@@ -387,22 +401,28 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
         m_report_pending = false;
         break;
     case APP_USBD_EVT_DRV_SUSPEND:
-        m_report_pending = false;
         app_usbd_suspend_req(); // Allow the library to put the peripheral into sleep mode
+        m_report_pending = false;
         break;
     case APP_USBD_EVT_DRV_RESUME:
-        m_report_pending = false;
+        app_usbd_wakeup_req();
         set_usb_led_stat(); /* Restore LED state - during SUSPEND all LEDS are turned off */
+        m_report_pending = false;
         break;
     case APP_USBD_EVT_STARTED:
         m_report_pending = false;
+        usb_started = true;
+        trig_kb_event_param(KB_EVT_USB, KB_USB_START);
         break;
     case APP_USBD_EVT_STOPPED:
+        usb_started = false;
         app_usbd_disable();
+        trig_kb_event_param(KB_EVT_USB, KB_USB_STOP);
         break;
     case APP_USBD_EVT_POWER_DETECTED:
         NRF_LOG_INFO("USB power detected");
-        if (!nrf_drv_usbd_is_enabled())
+        usb_power_conn = true;
+        if (current_usb_protocol && !nrf_drv_usbd_is_enabled())
         {
             app_usbd_enable();
         }
@@ -410,14 +430,15 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
         break;
     case APP_USBD_EVT_POWER_REMOVED:
         NRF_LOG_INFO("USB power removed");
-        app_usbd_stop();
+        usb_power_conn = false;
+        if(nrf_drv_usbd_is_enabled()){
+            app_usbd_stop();        
+        }
         trig_kb_event_param(KB_EVT_USB, KB_USB_POWER_DISCONN);
-        trig_kb_event_param(KB_EVT_USB, KB_USB_STOP);
         break;
     case APP_USBD_EVT_POWER_READY:
         NRF_LOG_INFO("USB ready");
         app_usbd_start();
-        trig_kb_event_param(KB_EVT_USB, KB_USB_START);
         break;
     default:
         break;
@@ -470,7 +491,7 @@ void usbd_prepare(void)
 {
     usbd_init();
     usbd_classes_append();
-    nrf_delay_ms(50);
+    nrf_delay_ms(1);
     ret_code_t err_code;
     err_code = app_usbd_power_events_enable();
     APP_ERROR_CHECK(err_code);
@@ -487,3 +508,32 @@ void usbd_evt_process(void)
         // do nothing
     }
 }
+
+static void usb_protocol_evt_handler(kb_event_type_t event, void * p_arg)
+{
+    ret_code_t err_code;
+    uint8_t param = (uint32_t)p_arg;
+    switch(event){
+    case KB_EVT_PROTOCOL_SWITCH:
+        switch(param){
+            case SUBEVT_PROTOCOL_USB:
+                current_usb_protocol = true;
+                if(usb_power_conn){
+                    if (!nrf_drv_usbd_is_enabled()){
+                        app_usbd_enable();
+                    }
+                }
+                break;
+            case SUBEVT_PROTOCOL_BLE:
+                current_usb_protocol = false;
+                if(nrf_drv_usbd_is_enabled()){
+                    NRF_LOG_INFO("stop usbd");
+                    app_usbd_stop();
+                }
+                break;
+        }
+        break;
+    }
+}
+
+KB_EVT_HANDLER(usb_protocol_evt_handler);

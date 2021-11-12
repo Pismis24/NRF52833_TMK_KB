@@ -9,7 +9,7 @@
 
 #include "kb_evt.h"
 
-#define MAX_KB_EVT_COUNT 20
+#define MAX_KB_EVT_COUNT 30
 
 typedef struct event_queue_item
 {
@@ -22,6 +22,11 @@ typedef struct event_queue_item
 NRF_SECTION_DEF(kbd_event, KbEvtHandler);
 //定义键盘事件buffer queue
 NRF_QUEUE_DEF(event_queue_item_t, kb_event_queue, MAX_KB_EVT_COUNT, NRF_QUEUE_MODE_NO_OVERFLOW);
+
+void kb_event_queue_init(void)
+{
+    nrf_queue_reset(&kb_event_queue);
+}
 
 static void kb_event_handler(kb_event_type_t event, void* p_arg)
 {

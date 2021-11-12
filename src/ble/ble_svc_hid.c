@@ -82,42 +82,31 @@ uint8_t hid_report_map_table[] = {
     INPUT_REP_CONSUMER_INDEX
 };
 
-/** Abstracts buffer element */
-typedef struct hid_key_buffer {
-    uint8_t index; /**< Report Index */
-    uint8_t data_len; /**< Total length of data */
-    uint8_t* p_data; /**< Scanned key pattern */
-    ble_hids_t* p_instance; /**< Identifies peer and service instance */
-} buffer_entry_t;
+/*buffer*/
+static uint8_t buffer_index[BUFFER_ACTUALL_LEN];
+static ble_hids_t* buffer_p_instance[BUFFER_ACTUALL_LEN];
+static uint8_t buffer_data_len[BUFFER_ACTUALL_LEN];
+static uint8_t buffer_data[BUFFER_ACTUALL_LEN][8];
+static uint8_t buffer_rp; //read pos
+static uint8_t buffer_wp; //write pos
 
-STATIC_ASSERT(sizeof(buffer_entry_t) % 4 == 0);
-
-/** Circular buffer list */
-typedef struct
-{
-    buffer_entry_t buffer[BUFFER_ACTUALL_LEN]; /**< Maximum number of entries that can enqueued in the list */
-    uint8_t rp; /**< Index to the read location */
-    uint8_t wp; /**< Index to write location */
-} buffer_list_t;
-
-STATIC_ASSERT(sizeof(buffer_list_t) % 4 == 0);
-
-static buffer_list_t buffer_list; /**< List to enqueue not just data to be sent, but also related information like the handle, connection handle etc */
-
-/**@brief   Function for initializing the buffer queue used to key events that could not be
- *          transmitted
- *
- * @note    In case of HID keyboard, a temporary buffering could be employed to handle scenarios
- *          where encryption is not yet enabled or there was a momentary link loss or there were no
- *          Transmit buffers.
- */
 static void buffer_init(void)
 {
-    buffer_list.rp = 0;
-    buffer_list.wp = 0;
-    memset((void*)buffer_list.buffer, 0, sizeof(buffer_entry_t) * BUFFER_ACTUALL_LEN);
+    memset(buffer_index, 0, sizeof(uint8_t)*BUFFER_ACTUALL_LEN);
+    memset(buffer_p_instance, 0, sizeof(ble_hids_t*)*BUFFER_ACTUALL_LEN);
+    memset(buffer_data_len, 0, sizeof(uint8_t)*BUFFER_ACTUALL_LEN);
+    memset(buffer_data, 0, sizeof(uint8_t)*8*BUFFER_ACTUALL_LEN);
+    buffer_rp = 0;
+    buffer_wp = 0; 
 }
 
+static void buffer_element_reset(uint8_t idx)
+{
+    memset(buffer_p_instance[idx], 0, sizeof(ble_hids_t*));
+    buffer_index[idx] = 0;
+    buffer_data_len[idx] = 0;
+    memset(buffer_data[idx], 0, sizeof(uint8_t)*8);
+}
 
 BLE_HIDS_DEF(m_hids, /**< Structure used to identify the HID service. */
     NRF_SDH_BLE_TOTAL_LINK_COUNT,
@@ -237,6 +226,7 @@ static uint32_t send_key(ble_hids_t* p_hids,
     uint8_t len)
 {
     ret_code_t err_code = NRF_SUCCESS;
+    //NRF_LOG_INFO("index %d, len %d", index, len);
     if (m_in_boot_mode) {
         if (index == 0) {
             err_code = ble_hids_boot_kb_inp_rep_send(p_hids,
@@ -256,18 +246,20 @@ static uint32_t send_key(ble_hids_t* p_hids,
 
 static void send_next_buffer(void)
 {
-    buffer_entry_t* p_element;
     ret_code_t err_code = NRF_SUCCESS;
     bool remove_element = false;
     //判断缓冲是否为空
-    if(buffer_list.wp == buffer_list.rp){
+    if(buffer_rp == buffer_wp){
         return;
     }
     else{
-        NRF_LOG_INFO("buffer read pos %d", buffer_list.rp);
-        p_element = &buffer_list.buffer[(buffer_list.rp)];
+        NRF_LOG_INFO("buffer read pos %d", buffer_rp);
         if(m_conn_handle!=BLE_CONN_HANDLE_INVALID){
-            err_code = send_key(p_element->p_instance, p_element->index, p_element->p_data, p_element->data_len);
+            err_code = send_key(
+                buffer_p_instance[buffer_rp], 
+                buffer_index[buffer_rp], 
+                buffer_data[buffer_rp], 
+                buffer_data_len[buffer_rp]);
             if(err_code == NRF_SUCCESS){
                 remove_element = true;
             }
@@ -287,10 +279,10 @@ static void send_next_buffer(void)
         }
     }
     if(remove_element){
-        NRF_LOG_INFO("buffer drop pos: %d", buffer_list.rp);
-        memset(&buffer_list.buffer[buffer_list.rp], 0, sizeof(buffer_entry_t));
-        buffer_list.rp++;
-        buffer_list.rp %= BUFFER_ACTUALL_LEN;
+        NRF_LOG_INFO("buffer drop pos: %d", buffer_rp);
+        buffer_element_reset(buffer_rp);
+        buffer_rp++;
+        buffer_rp %= BUFFER_ACTUALL_LEN;
     }
 }
 
@@ -298,50 +290,52 @@ void ble_keys_send(uint8_t report_id, uint8_t key_pattern_len, uint8_t* p_key_pa
 {
     ret_code_t err_code;
     bool buffer_in = false;
+    bool report_valid = true;
     uint8_t report_index;
-    buffer_entry_t* element;
     if(m_conn_handle == BLE_CONN_HANDLE_INVALID){
         return;
     }
-    if(!(buffer_list.wp == buffer_list.rp)){
+    if(report_id >= sizeof(hid_report_map_table)){ report_valid = false; }
+    else{
+        report_index = hid_report_map_table[report_id];
+        if(report_index == INPUT_REP_INDEX_INVALID){ report_valid = false; }
+    }
+    if(!(buffer_rp == buffer_wp)){
         send_next_buffer();
         buffer_in = true;
     }
     else{
-        if(report_id >= sizeof(hid_report_map_table)){ buffer_in = false; }
-        else{
-            report_index = hid_report_map_table[report_id];
-            if(report_index == INPUT_REP_INDEX_INVALID){ buffer_in = false; }
-            else{
-                err_code = send_key(&m_hids, report_index, p_key_pattern, key_pattern_len);
-                if (err_code == NRF_ERROR_RESOURCES) { buffer_in = true; }
-                else if((err_code != NRF_SUCCESS) 
-                    && (err_code != NRF_ERROR_INVALID_STATE) 
-                    && (err_code != NRF_ERROR_BUSY) 
-                    && (err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING) 
-                    && (err_code != NRF_ERROR_FORBIDDEN)) { 
-                    APP_ERROR_CHECK(err_code); 
-                }
+        if(report_valid){
+            err_code = send_key(
+                &m_hids,
+                report_index,
+                p_key_pattern,
+                key_pattern_len
+            );
+            if(err_code == NRF_ERROR_RESOURCES){ buffer_in = true; }
+            else if((err_code != NRF_SUCCESS) 
+                && (err_code != NRF_ERROR_INVALID_STATE) 
+                && (err_code != NRF_ERROR_BUSY) 
+                && (err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING) 
+                && (err_code != NRF_ERROR_FORBIDDEN)){
+                APP_ERROR_CHECK(err_code);
             }
         }
     }
-    if(buffer_in){
-        if((buffer_list.wp+1)%BUFFER_ACTUALL_LEN == buffer_list.rp){ 
-            NRF_LOG_INFO("buffer drop pos: %d", buffer_list.rp);
-            memset(&buffer_list.buffer[buffer_list.rp], 0, sizeof(buffer_entry_t));
-            buffer_list.rp++;
-            buffer_list.rp %= BUFFER_ACTUALL_LEN;
+    if(buffer_in && report_valid){
+        if((buffer_wp + 1)%BUFFER_ACTUALL_LEN == buffer_rp){ 
+            NRF_LOG_INFO("buffer drop pos: %d", buffer_rp);
+            buffer_element_reset(buffer_rp);
+            buffer_rp++;
+            buffer_rp %= BUFFER_ACTUALL_LEN;
         }
-        NRF_LOG_INFO("buffer write pos: %d", buffer_list.wp);
-        element = &buffer_list.buffer[(buffer_list.wp)];
-        element->p_instance = &m_hids;
-        element->p_data = p_key_pattern;
-        element->index = report_index;
-        element->data_len = key_pattern_len;
-
-        buffer_list.wp++;
-        buffer_list.wp %= BUFFER_ACTUALL_LEN;
-        
+        NRF_LOG_INFO("buffer write pos: %d, report id %d, key_pattern_len %d", buffer_wp, report_index, key_pattern_len);
+        buffer_p_instance[buffer_wp] = &m_hids;
+        buffer_index[buffer_wp] = report_index;
+        buffer_data_len[buffer_wp] = key_pattern_len;
+        memcpy(buffer_data[buffer_wp], p_key_pattern, sizeof(uint8_t)*key_pattern_len);
+        buffer_wp++;
+        buffer_wp %= BUFFER_ACTUALL_LEN;  
     }
 }
 

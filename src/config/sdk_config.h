@@ -5816,14 +5816,14 @@
  
 
 #ifndef APP_USBD_CONFIG_SELF_POWERED
-#define APP_USBD_CONFIG_SELF_POWERED 1
+#define APP_USBD_CONFIG_SELF_POWERED 0
 #endif
 
 // <o> APP_USBD_CONFIG_MAX_POWER - MaxPower field in configuration descriptor in milliamps.  <0-500> 
 
 
 #ifndef APP_USBD_CONFIG_MAX_POWER
-#define APP_USBD_CONFIG_MAX_POWER 100
+#define APP_USBD_CONFIG_MAX_POWER 500
 #endif
 
 // <q> APP_USBD_CONFIG_POWER_EVENTS_PROCESS  - Process power events.

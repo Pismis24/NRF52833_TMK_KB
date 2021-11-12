@@ -48,8 +48,10 @@ enum subevt_protocol_lst {
 
 typedef void (*KbEvtHandler)(kb_event_type_t, void*);
 
+#define KB_EVT_HANDLER(_func) NRF_SECTION_ITEM_REGISTER(kbd_event, const KbEvtHandler _pt_##_func) = &_func
+
+void kb_event_queue_init(void);
 void execute_kb_event(void);
 void trig_kb_event(kb_event_type_t event);
 void trig_kb_event_param(kb_event_type_t event, uint8_t arg);
 
-#define KB_EVT_HANDLER(_func) NRF_SECTION_ITEM_REGISTER(kbd_event, const KbEvtHandler _pt_##_func) = &_func

@@ -476,15 +476,15 @@ static uint8_t current_tx = 6; // 0dbm default.
  */
 static void ble_rssi_change(int8_t rssi)
 {
-    NRF_LOG_INFO("current rssi %d", rssi);
+    //NRF_LOG_INFO("current rssi %d", rssi);
     const int8_t tx_power_table[] = { -40, -20, -16, -12, -8, -4, 0, 2, 4, 6, 7, 8};
-    if (rssi >= -60 && current_tx > 0)
+    if (rssi >= -65 && current_tx > 0)
         current_tx--;
     else if (rssi <= -75 && current_tx < sizeof(tx_power_table) - 1)
         current_tx++;
     else
         return;
-    NRF_LOG_INFO("tx value %d", tx_power_table[current_tx]);
+    //NRF_LOG_INFO("tx value %d", tx_power_table[current_tx]);
     sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_CONN, m_conn_handle, tx_power_table[current_tx]);
 }
 
