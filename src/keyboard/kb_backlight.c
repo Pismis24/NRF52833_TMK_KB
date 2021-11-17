@@ -93,12 +93,10 @@ static void kb_backlight_event_handler(kb_event_type_t event, void * p_arg)
     case KB_EVT_POWERSAVE:
         switch(param){
             case KB_POWERSAVE_ENTER:
-                nrfx_pwm_uninit(&m_pwm0);
+                pwm_backlight_set(0);
                 in_powersave = true;
                 break;
             case KB_POWERSAVE_EXIT:
-                err_code = nrfx_pwm_init(&m_pwm0, &pwm_config, NULL);
-                APP_ERROR_CHECK(err_code);
                 in_powersave = false;
                 pwm_backlight_set(current_level);
                 break;

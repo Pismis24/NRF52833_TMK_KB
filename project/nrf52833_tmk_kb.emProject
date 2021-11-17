@@ -54,8 +54,6 @@
         <file file_name="../src/config/keymap_setting.c" />
       </folder>
       <folder Name="keyboard">
-        <file file_name="../src/keyboard/kb_matrix.c" />
-        <file file_name="../src/keyboard/kb_matrix.h" />
         <file file_name="../src/keyboard/kb_adc.c" />
         <file file_name="../src/keyboard/kb_adc.h" />
         <file file_name="../src/keyboard/kb_evt.c" />
@@ -64,12 +62,14 @@
           <configuration Name="Debug" build_exclude_from_build="Yes" />
         </file>
         <file file_name="../src/keyboard/kb_backlight.c" />
-        <file file_name="../src/keyboard/kb_wdt.c" />
+        <file file_name="../src/keyboard/kb_led.c" />
+        <file file_name="../src/keyboard/kb_matrix.c" />
+        <file file_name="../src/keyboard/kb_matrix.h" />
+        <file file_name="../src/keyboard/kb_powersave.c" />
+        <file file_name="../src/keyboard/kb_sleep.c" />
         <file file_name="../src/keyboard/kb_storage.c" />
         <file file_name="../src/keyboard/kb_storage.h" />
-        <file file_name="../src/keyboard/kb_sleep.c" />
-        <file file_name="../src/keyboard/kb_led.c" />
-        <file file_name="../src/keyboard/kb_powersave.c" />
+        <file file_name="../src/keyboard/kb_wdt.c" />
       </folder>
       <folder Name="drivers">
         <file file_name="../src/drivers/ec11.c" />

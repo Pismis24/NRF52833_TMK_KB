@@ -24,6 +24,7 @@
 #define MATRIX_SCAN_VALID_TIMES 1
 #endif
 
+static bool sleep_flag = false;
 
 //消抖队列定义
 typedef struct {
@@ -146,7 +147,7 @@ static void unselect_row(uint8_t row)
 
 uint8_t matrix_scan(void)
 {
-    ret_code_t err_code;
+    if(sleep_flag){ return 0; }
     //遍历行
     for(uint8_t idx=0; idx<KEY_ROWS; idx++){
         //将该行激活
@@ -164,6 +165,7 @@ uint8_t matrix_scan(void)
         //等待稳定
         nrf_delay_us(25);
     }
+    return 1;
 }
 
 #ifdef MATRIX_EXTRAKEY_EXIST
@@ -234,15 +236,6 @@ void matrix_init(void)
     }
 }
 
-static void matrix_deinit(void)
-{
-    for(uint8_t idx=0; idx<KEY_ROWS; idx++){
-        nrf_gpio_cfg_default(row_pins[idx]);
-    }
-    for(uint8_t idx=0; idx<KEY_COLS; idx++){
-        nrf_gpio_cfg_default(col_pins[idx]);
-    }
-}
 
 static void matrix_wakeup_prepare(void)
 {
@@ -251,28 +244,16 @@ static void matrix_wakeup_prepare(void)
         nrf_gpio_cfg_sense_input(col_pins[idx], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
     }
     for(uint8_t idx=0; idx<KEY_ROWS; idx++){
-        nrf_gpio_cfg(
-        row_pins[idx],
-        NRF_GPIO_PIN_DIR_INPUT,
-        NRF_GPIO_PIN_INPUT_DISCONNECT,
-        NRF_GPIO_PIN_PULLUP,
-        NRF_GPIO_PIN_S0S1,
-        NRF_GPIO_PIN_NOSENSE
-        );
+        nrf_gpio_cfg_output(row_pins[idx]);
+        nrf_gpio_pin_set(row_pins[idx]);
     }
 #else
     for(uint8_t idx=0; idx<MATRIX_COLS; idx++){
         nrf_gpio_cfg_sense_input(col_pins[idx], NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
     }
     for(uint8_t idx=0; idx<MATRIX_ROWS; idx++){
-        nrf_gpio_cfg(
-        row_pins[idx],
-        NRF_GPIO_PIN_DIR_INPUT,
-        NRF_GPIO_PIN_INPUT_DISCONNECT,
-        NRF_GPIO_PIN_PULLDOWN,
-        NRF_GPIO_PIN_S0S1,
-        NRF_GPIO_PIN_NOSENSE
-        );
+        nrf_gpio_cfg_output(row_pins[idx]);
+        nrf_gpio_pin_clear(row_pins[idx]);
     }
 #endif
     NRF_LOG_INFO("matrix wake up perpared");
@@ -282,7 +263,7 @@ static void matrix_event_handle(kb_event_type_t event, void * p_arg)
 {
     switch(event){
         case KB_EVT_SLEEP:
-            matrix_deinit();
+            sleep_flag = true;
             matrix_wakeup_prepare();
         break;
     }

@@ -43,8 +43,10 @@ QDEC外设有自己的去抖
 
 #ifdef EC11_WITH_SWITCH
 
-#define ENCODER_SWITCH_SCAN_INTERVAL 2 //in ms
+#define ENCODER_SWITCH_SCAN_INTERVAL 10 //in ms
 #define ENCODER_SWITCH_SCAN_VALID_TIMES 5
+
+static bool sleep_flag = false;
 
 APP_TIMER_DEF(encoder_switch_timer);
 
@@ -75,6 +77,10 @@ static void encoder_switch_timeout_handler(void* p_context)
         switch_state = !switch_state;
         matrix_extra_set(ENCODER_SWH, switch_state);
     }
+    if(sleep_flag) { return; }
+    ret_code_t err_code;
+    err_code = app_timer_start(encoder_switch_timer, APP_TIMER_TICKS(ENCODER_SWITCH_SCAN_INTERVAL), NULL);
+    APP_ERROR_CHECK(err_code);
 }
 #endif //EC11_WITH_SWITCH
 
@@ -147,7 +153,7 @@ static void encoder_init(void)
     switch_state = false;
     app_timer_create(
         &encoder_switch_timer, 
-        APP_TIMER_MODE_REPEATED, 
+        APP_TIMER_MODE_SINGLE_SHOT, 
         encoder_switch_timeout_handler
     );
 #endif
@@ -162,11 +168,8 @@ static void encoder_start(void)
 static void encoder_deinit(void)
 {
     nrfx_qdec_uninit();
-    nrf_gpio_cfg_default(ENCA);
-    nrf_gpio_cfg_default(ENCB);
 #ifdef EC11_WITH_SWITCH
     app_timer_stop(encoder_switch_timer);
-    nrf_gpio_cfg_default(ENCS);
 #endif
 }
 
@@ -174,7 +177,9 @@ static void encoder_wakeup_prepare(void)
 {
     nrf_gpio_cfg_sense_input(ENCA, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
     nrf_gpio_cfg_sense_input(ENCB, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
+#ifdef EC11_WITH_SWITCH
     nrf_gpio_cfg_sense_input(ENCS, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
+#endif
 }
 
 static void encoder_event_handler(kb_event_type_t event, void * p_arg)
@@ -188,6 +193,7 @@ static void encoder_event_handler(kb_event_type_t event, void * p_arg)
             encoder_start();
             break;
         case KB_EVT_SLEEP:
+            sleep_flag = true;
             encoder_deinit();
             encoder_wakeup_prepare();
             break;
