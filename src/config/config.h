@@ -3,7 +3,9 @@
 #include "board_def.h"
 
 /*Scan Config*/
-#define KEYBOARD_TASK_INTERVAL 1 // in ms
+// The intervals of keyboard task defined by tmk
+#define KEYBOARD_TASK_NORMAL_INTERVAL 1 // in ms
+#define KEYBOARD_TASK_SLOW_INTERVAL 10 // in ms
 
 /*Matrix*/
 
@@ -13,7 +15,7 @@
 
 /*matrix pin config*/
 /*diodes dir*/
-#define DIODES_ROW2COL
+#define DIODES_ROW2COL // if not defined, means the diodes is col to row
 /*row pins*/
 static const uint8_t row_pins[KEY_ROWS] = {  
     PIN27, PIN26, PIN25, PIN24, PIN23, PIN22};
@@ -21,7 +23,8 @@ static const uint8_t row_pins[KEY_ROWS] = {
 static const uint8_t col_pins[KEY_COLS] = {
     PIN21, PIN20, PIN19, PIN18, PIN17, PIN16, PIN15, PIN14, PIN13, PIN12, PIN11, PIN10, PIN09, PIN08, PIN07};
 /*matrix debounce*/
-#define MATRIX_SCAN_VALID_TIMES 10
+// See kb_matrix.c for debounce method
+#define MATRIX_SCAN_VALID_TIMES 5
 
 
 /*Encoder*/
@@ -31,14 +34,14 @@ static const uint8_t col_pins[KEY_COLS] = {
 #ifdef EC11_ENCODER
 
 /*encoder pin config*/
-    #define ENCA PIN05
-    #define ENCB PIN04
-    #define ENCODER_TN_POS KEY_ROWS,0
-    #define ENCODER_TN_NEG KEY_ROWS,1
+    #define ENCA PIN05 // pin to read encoder pin A
+    #define ENCB PIN04 // pin to read encoder pin B
+    #define ENCODER_TN_POS KEY_ROWS,0 // the virtual key map position of turning forward
+    #define ENCODER_TN_NEG KEY_ROWS,1 // the virtual key map position of turning backward
 
     #ifdef EC11_WITH_SWITCH
-        #define ENCS PIN06
-        #define ENCODER_SWH KEY_ROWS,2
+        #define ENCS PIN06 //pin to read encoder pin switch
+        #define ENCODER_SWH KEY_ROWS,2 // the virtual key map position of switch
     #endif
 #endif
 
@@ -49,7 +52,10 @@ static const uint8_t col_pins[KEY_COLS] = {
 
 
 /*Keymap Size*/
-#ifdef MATRIX_EXTRAKEY_EXIST //按键矩阵之外的按键单列一行
+// If using things like encoder, 
+// to turn its movement to keycodes, 
+// it should to be mapped to additional virtual keys outside normal keys
+#ifdef MATRIX_EXTRAKEY_EXIST
 #define MATRIX_ROWS (KEY_ROWS + 1)
 #else
 #define MATRIX_ROWS KEY_ROWS
@@ -66,25 +72,15 @@ static const uint8_t col_pins[KEY_COLS] = {
 
 /*进入省电状态设置*/
 #define POWERSAVE_ENABLE
-#define POWERSAVE_TIMEOUT 180 // in second
+#define POWERSAVE_TIMEOUT 120 // in second
 #if defined(POWERSAVE_ENABLE) && !defined(POWERSAVE_TIMEOUT)
     #define POWERSAVE_TIMEOUT 60
 #endif
 #define POWERSAVE_TIMEOUT_MIL_SECOND (POWERSAVE_TIMEOUT*1000)
 
-/*大小写灯*/
-#define CAPS_LED PIN01
-#define CAPS_LED_ACT 1 //高电平点亮
-
-//两脚双色LED灯
-//蓝灯引脚（用于指示蓝牙状态）
-#define BNR_LED_B PIN02
-//红灯引脚（用于指示USB状态）
-#define BNR_LED_R PIN03
-
 /*背光灯设置*/
 #define BACKLIGHT_ENABLE
-#define BACKLIGHT_LEVELS 3
+#define BACKLIGHT_LEVELS 3 // three stages of backlight
 
 /* key combination for command */
 #define IS_COMMAND() (keyboard_report->mods == (MOD_BIT(KC_LSHIFT) | MOD_BIT(KC_RSHIFT)))

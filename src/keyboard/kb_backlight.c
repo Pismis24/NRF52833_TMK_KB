@@ -16,7 +16,7 @@
 #include "kb_evt.h"
 
 #define PWM_MAX_COUNT 1000 //CLOCK FREQ和MAX_COUNT决定周期频率
-#define PWM_TOP_LUM 850    //MAX_COUNT - TOP_LUM决定最大亮度占空比
+#define PWM_TOP_LUM 900    //MAX_COUNT - TOP_LUM决定最大亮度占空比
 
 static nrfx_pwm_t m_pwm0 = NRFX_PWM_INSTANCE(BACKLIGHT_PWM_INSTANCE);
 static bool in_powersave = false;

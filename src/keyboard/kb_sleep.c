@@ -32,12 +32,12 @@ static void auto_sleep_timeout_handle(void * p_context)
 
 static void sleep_actual_enter(void * p_context)
 {
-    //deinit kbd task hardware timer
-    //watch dog is feeded by keyboard task so timer need to be stoped lastly
-    const nrfx_timer_t kbd_task_timer = NRFX_TIMER_INSTANCE(KBD_TASK_TIMER);
-    nrfx_timer_uninit(&kbd_task_timer);
+    ret_code_t err_code;
+    //stop all running apptimer
+    err_code = app_timer_stop_all();
+    APP_ERROR_CHECK(err_code);
     //enter sleep mode
-    ret_code_t err_code = sd_power_system_off();
+    err_code = sd_power_system_off();
     
 }
 

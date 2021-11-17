@@ -2,4 +2,4 @@
 #include <stdint.h>
 #include <string.h>
 
-void keyboard_start(void);
+void keyboard_task_start(void);

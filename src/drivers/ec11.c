@@ -1,3 +1,22 @@
+/*EC11的驱动程序*/
+/*
+使用QDEC外设对编码器的旋转进行读取，使用间隔扫描方式读取按键的触发情况
+外设通过KB_EVT_INIT事件初始化
+在KB_EVT_START事件后开始运行
+
+按键触发扫描与去抖：
+每隔ENCODER_SWITCH_SCAN_INTERVAL读取一次按键对应引脚的电平
+当连续ENCODER_SWITCH_SCAN_VALID_TIMES次发现引脚的触发情况改变后改变虚拟按键的触发情况来进行去抖
+也就意味着只有稳定触发超过ENCODER_SWITCH_SCAN_INTERVAL * ENCODER_SWITCH_SCAN_VALID_TIMES毫秒后判定按键摁下或抬起
+
+编码器旋转的扫描与处理：
+QDEC外设有自己的去抖
+每次A端或B端发生电位改变时会产生一个NRF_QDEC_EVENT_REPORTRDY事件，event.data.report.acc会告知QDEC读取的编码器旋转方向，
+由于1定位1脉冲的编码器每转动一格会分别在A端和B端产生2次电平变化（1下1上），因此每连续四次记录到同方向旋转认为其转了一格
+判断出转动了一格后，产生虚拟按键一次摁下-抬起的模拟触发情况
+
+*/
+
 #include "config.h"
 
 #ifdef EC11_ENCODER
@@ -10,6 +29,7 @@
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
+
 #include "nrf_log_default_backends.h"
 
 #include "app_timer.h"
@@ -20,7 +40,6 @@
 
 #include "kb_matrix.h"
 #include "kb_evt.h"
-
 
 #ifdef EC11_WITH_SWITCH
 
@@ -52,8 +71,10 @@ static void encoder_switch_timeout_handler(void* p_context)
             break;
         }
     }
-        matrix_extra_set(ENCODER_SWH, flag);
-        //NRF_LOG_INFO("ENCODER_SWH ACT");
+    if(flag){
+        switch_state = !switch_state;
+        matrix_extra_set(ENCODER_SWH, switch_state);
+    }
 }
 #endif //EC11_WITH_SWITCH
 
@@ -106,7 +127,6 @@ void decoder_event_handler(nrfx_qdec_event_t event)
                     matrix_extra_add_oneshot(ENCODER_TN_NEG);
                     report_cnt = 0;
                 }
-                //NRF_LOG_INFO("TN_NEG");
             }
         }
     }

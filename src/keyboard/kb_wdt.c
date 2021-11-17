@@ -16,7 +16,7 @@
 
 #include "kb_evt.h"
 
-#define WDT_RELOAD_TIME (KEYBOARD_TASK_INTERVAL * 100) // 100倍keyboard task运行周期 (100ms)
+#define WDT_RELOAD_TIME (KEYBOARD_TASK_SLOW_INTERVAL * 20)
 
 // watchdog timer expired handle
 static void kb_watchdog_handler(void)

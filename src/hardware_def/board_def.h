@@ -2,11 +2,9 @@
 
 #include "nrf_gpio.h"
 
-//配置Timer
-#define KBD_TASK_TIMER 1
-
-//矩阵脚，板子上的30PINFPC母座从左往右数第二个开始定义为第0个
-#define PIN00 NRF_GPIO_PIN_MAP(0, 18) // Config as reset pin
+//将GPIO映射至板子上的FPC座子脚位
+//板子上的30PIN FPC母座从左往右数第二个开始定义为第0个，
+#define PIN00 NRF_GPIO_PIN_MAP(0, 18) // Config as reset pin by macro CONFIG_GPIO_AS_PINRESET
 #define PIN01 NRF_GPIO_PIN_MAP(0, 10)
 #define PIN02 NRF_GPIO_PIN_MAP(0, 9)
 #define PIN03 NRF_GPIO_PIN_MAP(0, 24)
@@ -35,10 +33,20 @@
 #define PIN26 NRF_GPIO_PIN_MAP(0, 31)
 #define PIN27 NRF_GPIO_PIN_MAP(0, 30)
 
+/*大小写灯*/
+#define CAPS_LED PIN01 // pin to control Capslock light
+#define CAPS_LED_HIGH_ACT // 高电平点亮
+
+//两脚双色LED灯
+//蓝灯引脚（用于指示蓝牙状态）
+#define BNR_LED_B PIN02
+//红灯引脚（用于指示USB状态）
+#define BNR_LED_R PIN03
+
 //输出PWM信号控制单色背光灯引脚
 #define BACKLIGHT_PIN NRF_GPIO_PIN_MAP(0, 25)
 //背光使用的PWM设备
 #define BACKLIGHT_PWM_INSTANCE 0
 
 //用哪个Analog通道读电池电压
-#define VOLTAGE_SOURCE NRF_SAADC_INPUT_VDDHDIV5
+#define VOLTAGE_SOURCE NRF_SAADC_INPUT_VDDHDIV5 //使用VDDH脚读取
