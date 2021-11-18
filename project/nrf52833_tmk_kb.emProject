@@ -87,7 +87,6 @@
         <file file_name="../src/ble/ble_hid_descriptor.h" />
         <file file_name="../src/ble/ble_svc_hid.c" />
         <file file_name="../src/ble/ble_svc_hid.h" />
-        <configuration Name="Debug" build_exclude_from_build="No" />
         <file file_name="../src/ble/ble_svc_bas.c" />
         <file file_name="../src/ble/ble_svc_bas.h" />
         <file file_name="../src/ble/ble_svc_dis.c" />
@@ -105,10 +104,7 @@
       <folder Name="usbd">
         <file file_name="../src/usb/usbd_hid.c" />
         <file file_name="../src/usb/usbd_hid.h" />
-        <configuration Name="Debug" build_exclude_from_build="No" />
-        <file file_name="../src/usb/usb_hid_descriptor.h">
-          <configuration Name="Debug" build_exclude_from_build="No" />
-        </file>
+        <file file_name="../src/usb/usb_hid_descriptor.h" />
       </folder>
     </folder>
     <folder Name="nRF_SDK">

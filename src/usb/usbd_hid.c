@@ -6,6 +6,7 @@
 #include "app_util_platform.h"
 #include "nrf.h"
 #include "nrf_drv_usbd.h"
+#include "nrf_drv_power.h"
 
 #include "nrf_delay.h"
 
@@ -36,8 +37,6 @@ uint8_t keyboard_led_val_usbd = 0;
 static bool m_report_pending = false;
 //flag of current protocol is usb
 static bool current_usb_protocol = false;
-//flag of usb connected
-static bool usb_power_conn = false;
 //flag of usb started
 static bool usb_started = false;
 
@@ -421,7 +420,6 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
         break;
     case APP_USBD_EVT_POWER_DETECTED:
         NRF_LOG_INFO("USB power detected");
-        usb_power_conn = true;
         if (current_usb_protocol && !nrf_drv_usbd_is_enabled())
         {
             app_usbd_enable();
@@ -430,7 +428,6 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
         break;
     case APP_USBD_EVT_POWER_REMOVED:
         NRF_LOG_INFO("USB power removed");
-        usb_power_conn = false;
         if(nrf_drv_usbd_is_enabled()){
             app_usbd_stop();        
         }
@@ -518,7 +515,7 @@ static void usb_protocol_evt_handler(kb_event_type_t event, void * p_arg)
         switch(param){
             case SUBEVT_PROTOCOL_USB:
                 current_usb_protocol = true;
-                if(usb_power_conn){
+                if(nrf_drv_power_usbstatus_get() == NRF_DRV_POWER_USB_STATE_CONNECTED){
                     if (!nrf_drv_usbd_is_enabled()){
                         app_usbd_enable();
                     }

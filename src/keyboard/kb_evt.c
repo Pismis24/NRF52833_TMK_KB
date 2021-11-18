@@ -9,7 +9,7 @@
 
 #include "kb_evt.h"
 
-#define MAX_KB_EVT_COUNT 30
+#define MAX_KB_EVT_COUNT 100
 
 typedef struct event_queue_item
 {
@@ -42,7 +42,7 @@ static void trig_event(kb_event_type_t event, void* p_arg){
     event_queue_item_t event_item = {0};
     switch(event){
         case KB_EVT_INIT:
-        case KB_EVT_START:      
+        case KB_EVT_START:   
             kb_event_handler(event, p_arg);//以上事件需要立刻处理
             break;
         default:

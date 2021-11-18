@@ -66,9 +66,9 @@
 
 #define SCHED_MAX_EVENT_DATA_SIZE APP_TIMER_SCHED_EVENT_DATA_SIZE
 #ifdef SVCALL_AS_NORMAL_FUNCTION
-#define SCHED_QUEUE_SIZE 30
+#define SCHED_QUEUE_SIZE 100
 #else
-#define SCHED_QUEUE_SIZE 20
+#define SCHED_QUEUE_SIZE 75
 #endif
 
 
@@ -164,17 +164,17 @@ int main()
     kb_event_queue_init();
     // init keyboard storage
     storage_init();
-    
+
     // init usb device
     usbd_prepare(); 
     // init bluetooth stack, services, etc.
     ble_init();
-
+    
     // trig init event, init keyboard peripherals of keyboards
     trig_kb_event(KB_EVT_INIT);
     // keyboard_task_timer and matrix init
     keyboard_init();
-    
+
     // start keyboard functions
     trig_kb_event(KB_EVT_START);
     // start the tmk keyboard task timer, start tmk functions
