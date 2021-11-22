@@ -37,7 +37,8 @@ Nordic SDK版本：nRF5_SDK_17.0.2
 2. 下载nordic官方sdk：nRF5_SDK_17.0.2  
 3. 解压后将SDK中的**components**、**external**、**integration**、**modules**四个文件夹放入项目目录下的**nrf_sdk**文件夹中  
 4. 下载并安装**Segger Embedded Studio**（以下简称SES），使用SES打开项目目录下**project**文件夹中的**nrf52833_tmk_kb.emProject**项目工程文件
-5. 摁F7进行编译，再通过Jlink将固件写入芯片（别的没用过，不作评价）  
+5. 对原生的tmk进行改动：在以下文件**tmk_core/backlight.h**、**tmk_core/keyboard.h**、**tmk_core/matrix.h**引用头文件的部分增加引用头文件`#include "config.h"`
+6. 摁F7进行编译，再通过Jlink将固件写入芯片（别的没用过，不作评价）  
 
 - - -
 
@@ -72,7 +73,7 @@ Nordic SDK版本：nRF5_SDK_17.0.2
 * https://github.com/Lotlab/nrf52-keyboard
 * https://github.com/sekigon-gonnoc/qmk_firmware/tree/nrf52
 * https://github.com/chie4hao/qmk_firmware_nrf52840
-* 以及Nordic SDK中的样例
+* 以及Nordic SDK中的样例  
 
 如果不是通过读、学甚至抄这些开源代码，我没法完成这版键盘固件，所以我十分感激这些愿意将成果开源出来的人们
 
@@ -80,8 +81,8 @@ Nordic SDK版本：nRF5_SDK_17.0.2
 
 ## 特别鸣谢
 
-[JasonBroker](https://github.com/Jasonbroker)在B站上出的的教程，虽然没出完，但帮我解决了最困难的从无到有的问题
-[他的B站个人空间](https://space.bilibili.com/95393302)
+[JasonBroker](https://github.com/Jasonbroker)在B站上出的的教程，虽然没出完，但帮我解决了最困难的从无到有的问题  
+[他的B站个人空间](https://space.bilibili.com/95393302)  
 [从0开始制作键盘固件](https://www.bilibili.com/video/BV11X4y1w7Cr)
 
 - - -
@@ -122,7 +123,8 @@ This firmware is written for my custom keyboard, some code was written specially
 2. Download Nordic **nRF5 SDK version 17.0.2**
 3. Unzip the file and move the four folders **components**、**external**、**integration**、**modules** to the **nrf_sdk** of the project
 4. Download and install **Segger Embedded Studio**(so call SES), and open **nrf52833_tmk_kb.emProject** in the **project** folder
-5. Press **F7** or click **Compile** to compile the firmware, then you can flash it to your nrf52833 chip via Jlink
+5. add `#include "config.h"` in these files: **tmk_core/backlight.h**、**tmk_core/keyboard.h**、**tmk_core/matrix.h**  
+6. Press **F7** or click **Compile** to compile the firmware, then you can flash it to your nrf52833 chip via Jlink
 
 - - -
 
@@ -166,6 +168,6 @@ Without reading, learning and even copying these open sources codes, I cannot fi
 
 ## Special Thanks
 
-[JasonBroker](https://github.com/Jasonbroker)`s tutorials about how to construct a keyboard firmware from scratch, which helped me to overcome the obstacle of 0 to 1, though the series seems never ends.
-[His Bilibili Personal Page](https://space.bilibili.com/95393302)
-[Building Keyboard Firmware from Scratch](https://www.bilibili.com/video/BV11X4y1w7Cr)
+[JasonBroker](https://github.com/Jasonbroker)`s tutorials about how to construct a keyboard firmware from scratch, which helped me to overcome the obstacle of 0 to 1, though the series seems never ends.  
+[His Bilibili Personal Page](https://space.bilibili.com/95393302)  
+[Building Keyboard Firmware from Scratch](https://www.bilibili.com/video/BV11X4y1w7Cr)  

@@ -242,7 +242,9 @@
       <file file_name="../tmk_core/common/backlight.c" />
       <file file_name="../tmk_core/common/backlight.h" />
       <file file_name="../tmk_core/common/bootloader.h" />
-      <file file_name="../tmk_core/common/bootmagic.c" />
+      <file file_name="../tmk_core/common/bootmagic.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
       <file file_name="../tmk_core/common/bootmagic.h" />
       <file file_name="../tmk_core/common/command.c" />
       <file file_name="../tmk_core/common/command.h" />
