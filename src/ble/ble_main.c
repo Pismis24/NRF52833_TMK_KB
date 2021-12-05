@@ -34,7 +34,7 @@
 
 #include "kb_evt.h"
 
-#define DEVICE_NAME                         "TMK_nRF52833_BLE_KBD"                          /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                         "nRF_TMK_KB_BLE"                          /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME                   "NordicSemiconductor"                      /**< Manufacturer. Will be passed to Device Information Service. */
 
 #define APP_BLE_OBSERVER_PRIO               3                                          /**< Application's BLE observer priority. You shouldn't need to modify this value. */
@@ -49,7 +49,7 @@
 #define APP_ADV_SLOW_INTERVAL               0x0C80                                     /**< Slow advertising interval (in units of 0.625 ms. This value corrsponds to 2 seconds). */
 
 #define APP_ADV_FAST_DURATION               3000                                       /**< The advertising duration of fast advertising in units of 10 milliseconds. */
-#define APP_ADV_SLOW_DURATION               9000                                      /**< The advertising duration of slow advertising in units of 10 milliseconds. */
+#define APP_ADV_SLOW_DURATION               6000                                       /**< The advertising duration of slow advertising in units of 10 milliseconds. */
 
 
 /*lint -emacro(524, MIN_CONN_INTERVAL) // Loss of precision */
@@ -686,6 +686,7 @@ void ble_conn_close(void)
         sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
     }
     trig_kb_event_param(KB_EVT_BLE, KB_BLE_ADV_STOP);
+    on_adv = false;
 }
 
 void ble_conn_restart(void)

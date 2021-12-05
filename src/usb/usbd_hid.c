@@ -516,6 +516,8 @@ static void usb_protocol_evt_handler(kb_event_type_t event, void * p_arg)
             case SUBEVT_PROTOCOL_USB:
                 current_usb_protocol = true;
                 if(nrf_drv_power_usbstatus_get() == NRF_DRV_POWER_USB_STATE_CONNECTED){
+                    //check current usb connection
+                    trig_kb_event_param(KB_EVT_USB, KB_USB_POWER_CONN);
                     if (!nrf_drv_usbd_is_enabled()){
                         app_usbd_enable();
                     }

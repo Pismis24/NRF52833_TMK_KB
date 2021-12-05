@@ -7,6 +7,8 @@
 
 #include "nrf_soc.h"
 
+#include "nrf_drv_power.h"
+
 #include "app_error.h"
 
 #include "app_timer.h"
@@ -16,7 +18,7 @@
 
 #include "config.h"
 
-#define FINAL_SLEEP_TIMEOUT APP_TIMER_TICKS(1000)
+#define FINAL_SLEEP_TIMEOUT APP_TIMER_TICKS(50)
 
 static bool autosleep_on = true;
 static bool autosleep_timer_start = false;
@@ -26,6 +28,7 @@ APP_TIMER_DEF(final_sleep_timer);
 
 static void auto_sleep_timeout_handle(void * p_context)
 {
+    autosleep_timer_start = false;
     NRF_LOG_INFO("Sleep mode prepare");
     trig_kb_event(KB_EVT_SLEEP); 
 }
@@ -58,12 +61,13 @@ static void auto_sleep_timer_init(void)
 static void auto_sleep_timer_start(void)
 {
     ret_code_t err_code;
-    if(!autosleep_timer_start){
+    if(!autosleep_timer_start & (nrf_drv_power_usbstatus_get() == NRF_DRV_POWER_USB_STATE_DISCONNECTED)){
         err_code = app_timer_start(auto_sleep_timer, 
         APP_TIMER_TICKS(AUTO_SLEEP_TIMEOUT_MIL_SECOND), 
         NULL);
         APP_ERROR_CHECK(err_code);
         autosleep_timer_start = true;
+        NRF_LOG_INFO("Auto Sleep start");
     }
 }
 
