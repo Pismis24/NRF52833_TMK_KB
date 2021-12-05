@@ -33,16 +33,6 @@
 #define PIN26 NRF_GPIO_PIN_MAP(0, 31)
 #define PIN27 NRF_GPIO_PIN_MAP(0, 30)
 
-/*大小写灯*/
-#define CAPS_LED PIN01 // pin to control Capslock light
-#define CAPS_LED_HIGH_ACT // 高电平点亮
-
-//两脚双色LED灯
-//蓝灯引脚（用于指示蓝牙状态）
-#define BNR_LED_B PIN02
-//红灯引脚（用于指示USB状态）
-#define BNR_LED_R PIN03
-
 //输出PWM信号控制单色背光灯引脚
 #define BACKLIGHT_PIN NRF_GPIO_PIN_MAP(0, 25)
 //背光使用的PWM设备
@@ -50,3 +40,19 @@
 
 //用哪个Analog通道读电池电压
 #define VOLTAGE_SOURCE NRF_SAADC_INPUT_VDDHDIV5 //使用VDDH脚读取
+
+
+//指示灯
+enum led_active_state {
+    LED_ACTIVE_LOW,
+    LED_ACTIVE_HIGH
+};
+
+#define LED1 PIN25
+#define LED1_ACTIVE_STATE LED_ACTIVE_HIGH
+
+#define LED2 PIN26
+#define LED2_ACTIVE_STATE LED_ACTIVE_HIGH
+
+#define LED3 PIN27
+#define LED3_ACTIVE_STATE LED_ACTIVE_HIGH

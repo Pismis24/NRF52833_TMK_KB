@@ -11,17 +11,17 @@
 
 /* key matrix size */
 #define KEY_ROWS 6
-#define KEY_COLS 15
+#define KEY_COLS 14
 
 /*matrix pin config*/
 /*diodes dir*/
 #define DIODES_ROW2COL // if not defined, means the diodes is col to row
 /*row pins*/
 static const uint8_t row_pins[KEY_ROWS] = {  
-    PIN27, PIN26, PIN25, PIN24, PIN23, PIN22};
+    PIN19, PIN20, PIN21, PIN22, PIN23, PIN24};
 /*col pins*/
 static const uint8_t col_pins[KEY_COLS] = {
-    PIN21, PIN20, PIN19, PIN18, PIN17, PIN16, PIN15, PIN14, PIN13, PIN12, PIN11, PIN10, PIN09, PIN08, PIN07};
+    PIN18, PIN17, PIN16, PIN15, PIN14, PIN13, PIN12, PIN11, PIN10, PIN09, PIN08, PIN07, PIN06, PIN05};
 /*matrix debounce*/
 // See kb_matrix.c for debounce method
 #define MATRIX_SCAN_VALID_TIMES 5
@@ -34,13 +34,13 @@ static const uint8_t col_pins[KEY_COLS] = {
 #ifdef EC11_ENCODER
 
 /*encoder pin config*/
-    #define ENCA PIN05 // pin to read encoder pin A
-    #define ENCB PIN04 // pin to read encoder pin B
+    #define ENCA PIN01 // pin to read encoder pin A
+    #define ENCB PIN02 // pin to read encoder pin B
     #define ENCODER_TN_POS KEY_ROWS,0 // the virtual key map position of turning forward
     #define ENCODER_TN_NEG KEY_ROWS,1 // the virtual key map position of turning backward
 
     #ifdef EC11_WITH_SWITCH
-        #define ENCS PIN06 //pin to read encoder pin switch
+        #define ENCS PIN03 //pin to read encoder pin switch
         #define ENCODER_SWH KEY_ROWS,2 // the virtual key map position of switch
     #endif
 #endif

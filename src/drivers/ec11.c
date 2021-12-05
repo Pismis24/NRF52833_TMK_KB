@@ -44,7 +44,7 @@ QDEC外设有自己的去抖
 #ifdef EC11_WITH_SWITCH
 
 #define ENCODER_SWITCH_SCAN_INTERVAL 10 //in ms
-#define ENCODER_SWITCH_SCAN_VALID_TIMES 5
+#define ENCODER_SWITCH_SCAN_VALID_TIMES 20
 
 static bool sleep_flag = false;
 
@@ -142,10 +142,10 @@ void decoder_event_handler(nrfx_qdec_event_t event)
 static void encoder_init(void)
 {
     nrfx_qdec_init(&qdec_config, decoder_event_handler);
-    nrf_gpio_cfg_input(qdec_config.psela, NRF_GPIO_PIN_PULLUP);
-    nrf_gpio_cfg_input(qdec_config.pselb, NRF_GPIO_PIN_PULLUP);
+    nrf_gpio_cfg_input(qdec_config.psela, NRF_GPIO_PIN_NOPULL);
+    nrf_gpio_cfg_input(qdec_config.pselb, NRF_GPIO_PIN_NOPULL);
 #ifdef EC11_WITH_SWITCH
-    nrf_gpio_cfg_input(ENCS, NRF_GPIO_PIN_PULLUP);
+    nrf_gpio_cfg_input(ENCS, NRF_GPIO_PIN_NOPULL);
     for(uint8_t idx=0; idx<ENCODER_SWITCH_SCAN_VALID_TIMES; idx++){
         switch_frames[idx] = false;
     }

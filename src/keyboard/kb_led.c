@@ -10,246 +10,85 @@
 #include "app_error.h"
 
 #include "nrf_gpio.h"
-#include "app_timer.h"
 
 #include "led.h"
 
 #include "kb_evt.h"
 
-/*
-    大小写灯直接控制电平高低
-    双色灯用类似pwm的方法控制，轮流亮半周，通过控制这半周是否应点亮来控制闪烁
-*/
-
-#define BNR_DRIVE_INTERVAL APP_TIMER_TICKS(5) // 5ms 半周，100hz
-#define BNR_BLINK_INTERVAL_FAST APP_TIMER_TICKS(200)
-#define BNR_BLINK_INTERVAL_SLOW APP_TIMER_TICKS(1000) // 闪烁周期1000ms（1s）
-
-enum bnr_drive_turn
-{
-    BNR_TURN_R,
-    BNR_TURN_B
-};
-
-
-enum bnr_light_color 
-{
-    BNR_COLOR_RED,
-    BNR_COLOR_BLUE,
-    BNR_COLOR_BOTH
-};
-
-enum bnr_blink_state
-{
-    BNR_BLINK_FAST,
-    BNR_BLINK_SLOW
-};
-
-//Dual color light drive timer
-APP_TIMER_DEF(bnr_drive_timer);
-//Dual color light blink timer
-APP_TIMER_DEF(bnr_blink_timer);
-
-static uint8_t bnr_drive_turn;
-static uint8_t bnr_blink_turn;
-static uint32_t bnr_blink_interval;
-static bool red_active;
-static bool blue_active;
-static bool red_blink;
-static bool blue_blink;
-static bool led_deinit = false;
-
-
-static void bnr_drive_timeout_handler(void * p_context)
-{
-    if(led_deinit){ return; }
-    switch(bnr_drive_turn){
-        case BNR_TURN_R:
-            nrf_gpio_pin_clear(BNR_LED_B);
-            if(red_active){
-                nrf_gpio_pin_set(BNR_LED_R);
-            }
-            bnr_drive_turn = BNR_TURN_B;
-        break;
-        case BNR_TURN_B:
-            nrf_gpio_pin_clear(BNR_LED_R);
-            if(blue_active){
-                nrf_gpio_pin_set(BNR_LED_B);
-            }
-            bnr_drive_turn = BNR_TURN_R;
-        break;
+static void led_on(uint32_t led_pin_mask, uint8_t led_active_state){
+    if(led_active_state == LED_ACTIVE_HIGH){
+        nrf_gpio_pin_set(led_pin_mask);
     }
-    ret_code_t err_code;
-    err_code = app_timer_start(bnr_drive_timer, BNR_DRIVE_INTERVAL, NULL);
-    APP_ERROR_CHECK(err_code);
-}
-
-static void bnr_blink_timeout_handler(void * p_context)
-{
-    if(led_deinit){ return; }
-    switch(bnr_blink_turn){
-        case BNR_TURN_R:
-        blue_active = false;
-        if(red_blink){
-            red_active = true;
-        }
-        bnr_blink_turn = BNR_TURN_B;
-        break;
-        case BNR_TURN_B:
-        red_active = false;
-        if(blue_blink){
-            blue_active = true;
-        }
-        bnr_blink_turn = BNR_TURN_R;
-        break;
+    else{
+        nrf_gpio_pin_clear(led_pin_mask);
     }
-    ret_code_t err_code;
-    err_code = app_timer_start(bnr_blink_timer, bnr_blink_interval, NULL);
-    APP_ERROR_CHECK(err_code);
 }
 
-
-//Init keyboard led
-static void kb_led_init(void)
-{
-    //Capslock led
-    nrf_gpio_cfg_output(CAPS_LED);
-    //Dual color light
-    bnr_drive_turn = BNR_TURN_B;
-    bnr_blink_turn = BNR_TURN_B;
-    bnr_blink_interval = BNR_BLINK_INTERVAL_SLOW;
-    red_active = false;
-    blue_active = false;
-    red_blink = false;
-    blue_active = false;
-    //Config output with pulldown resister
-    nrf_gpio_cfg(
-        BNR_LED_B,
-        NRF_GPIO_PIN_DIR_OUTPUT,
-        NRF_GPIO_PIN_INPUT_DISCONNECT,
-        NRF_GPIO_PIN_PULLDOWN,
-        NRF_GPIO_PIN_S0S1,
-        NRF_GPIO_PIN_NOSENSE
-    );
-    nrf_gpio_cfg(
-        BNR_LED_R,
-        NRF_GPIO_PIN_DIR_OUTPUT,
-        NRF_GPIO_PIN_INPUT_DISCONNECT,
-        NRF_GPIO_PIN_PULLDOWN,
-        NRF_GPIO_PIN_S0S1,
-        NRF_GPIO_PIN_NOSENSE
-    );
-    // init timers
-    ret_code_t err_code;
-    err_code = app_timer_create(
-        &bnr_drive_timer,
-        APP_TIMER_MODE_SINGLE_SHOT,
-        bnr_drive_timeout_handler);
-    APP_ERROR_CHECK(err_code);
-    err_code = app_timer_create(
-        &bnr_blink_timer,
-        APP_TIMER_MODE_SINGLE_SHOT,
-        bnr_blink_timeout_handler);
-    APP_ERROR_CHECK(err_code);
-    NRF_LOG_INFO("Keyboard led inited");
+static void led_off(uint32_t led_pin_mask, uint8_t led_active_state){
+    if(led_active_state == LED_ACTIVE_HIGH){
+        nrf_gpio_pin_clear(led_pin_mask);
+    }
+    else{
+        nrf_gpio_pin_set(led_pin_mask);
+    }
 }
-
-//deinit keyboard led
-static void kb_led_deinit(void)
-{
-    led_deinit = true; // if the flag is set true, timer will not start again after expired
-    nrf_gpio_cfg_default(CAPS_LED);
-    nrf_gpio_pin_clear(BNR_LED_B);
-    nrf_gpio_pin_clear(BNR_LED_R);
-}
-
 
 void led_set(uint8_t usb_led)
 {
     if(usb_led & 1 << USB_LED_CAPS_LOCK){
-#ifdef CAPS_LED_HIGH_ACT
-        nrf_gpio_pin_set(CAPS_LED);
-#else
-        nrf_gpio_pin_clear(CAPS_LED);
-#endif
+        led_on(LED1, LED1_ACTIVE_STATE);
     }
-    else {
-#ifdef CAPS_LED_HIGH_ACT
-        nrf_gpio_pin_clear(CAPS_LED);
-#else
-        nrf_gpio_pin_set(CAPS_LED);
-#endif
+    else{
+        led_off(LED1, LED1_ACTIVE_STATE);
     }
 }
 
-
-static void bnr_led_start(void)
+static void leds_init(void)
 {
-    ret_code_t err_code;
-    err_code = app_timer_start(bnr_drive_timer, BNR_DRIVE_INTERVAL, NULL);
-    APP_ERROR_CHECK(err_code);
-    err_code = app_timer_start(bnr_blink_timer, bnr_blink_interval, NULL);
-    APP_ERROR_CHECK(err_code);
-    NRF_LOG_INFO("Keyboard led started");
+    nrf_gpio_cfg_output(LED1);
+    nrf_gpio_cfg_output(LED2);
+    nrf_gpio_cfg_output(LED3);
+    led_off(LED1, LED1_ACTIVE_STATE);
+    led_off(LED2, LED2_ACTIVE_STATE);
+    led_off(LED3, LED3_ACTIVE_STATE);
 }
 
-static void bnr_led_color_set(uint8_t color)
+static void led_config_default(uint32_t led_pin_mask, uint8_t led_active_state)
 {
-    switch(color){
-        case BNR_COLOR_BLUE:
-            blue_blink = true;
-        break;
-        case BNR_COLOR_RED:
-            red_blink = true;
-        break;
-        case BNR_COLOR_BOTH:
-            red_blink = true;
-            blue_blink = true;
-        break;
+    nrf_gpio_pin_pull_t pull_res_config;
+    if(led_active_state == LED_ACTIVE_HIGH){
+        pull_res_config = NRF_GPIO_PIN_PULLDOWN;
     }
+    else{
+        pull_res_config = NRF_GPIO_PIN_PULLUP;
+    }
+    nrf_gpio_cfg(
+        led_pin_mask,
+        NRF_GPIO_PIN_DIR_INPUT,
+        NRF_GPIO_PIN_INPUT_DISCONNECT,
+        pull_res_config,
+        NRF_GPIO_PIN_S0S1,
+        NRF_GPIO_PIN_NOSENSE
+    );
 }
 
-static void bnr_led_color_clear(uint8_t color)
+static void leds_deinit(void)
 {
-    switch(color){
-        case BNR_COLOR_BLUE:
-            blue_blink = false;
-        break;
-        case BNR_COLOR_RED:
-            red_blink = false;
-        break;
-        case BNR_COLOR_BOTH:
-            red_blink = false;
-            blue_blink = false;
-        break;
-    }
-}
-
-
-
-static void bnr_led_freq_set(uint8_t freq)
-{
-    switch(freq){
-        case BNR_BLINK_FAST:
-            bnr_blink_interval = BNR_BLINK_INTERVAL_FAST;
-        break;
-        case BNR_BLINK_SLOW:
-            bnr_blink_interval = BNR_BLINK_INTERVAL_SLOW;
-        break;
-    }
+    led_config_default(LED1, LED1_ACTIVE_STATE);
+    led_config_default(LED2, LED2_ACTIVE_STATE);
+    led_config_default(LED3, LED3_ACTIVE_STATE);
 }
 
 static bool usbd_is_started = false;
-static bool current_protocol_is_usb;
+static bool usbd_current_protocol = false;
 
 static void usb_protocol_led_process(void)
 {
-    if(current_protocol_is_usb && !usbd_is_started){
-        bnr_led_color_set(BNR_COLOR_RED);
-        bnr_led_freq_set(BNR_BLINK_FAST);
+    if(usbd_current_protocol && !usbd_is_started){
+        led_on(LED3, LED3_ACTIVE_STATE);
     }
     else{
-        bnr_led_color_clear(BNR_COLOR_RED);
+        led_off(LED3, LED3_ACTIVE_STATE);
     }
 }
 
@@ -258,52 +97,47 @@ static void keyboard_led_event_handler(kb_event_type_t event, void * p_arg)
     ret_code_t err_code;
     uint8_t param = (uint32_t)p_arg;
     switch(event){
-        case KB_EVT_INIT:
-            kb_led_init();
-            bnr_led_start();
+    case KB_EVT_INIT:
+        leds_init();
         break;
-        case KB_EVT_BLE:
-            switch(param){
-                case KB_BLE_ADV_FAST:
-                    bnr_led_freq_set(BNR_BLINK_FAST);
-                    bnr_led_color_set(BNR_COLOR_BLUE);
-                break;
-                case KB_BLE_ADV_SLOW:
-                    bnr_led_freq_set(BNR_BLINK_SLOW);
-                    bnr_led_color_set(BNR_COLOR_BLUE);
-                break;
-                case KB_BLE_GAP_CONN:
-                case KB_BLE_ADV_STOP:
-                    bnr_led_color_clear(BNR_COLOR_BLUE);
-                break;
-            }
+    case KB_EVT_BLE:
+        switch(param){
+        case KB_BLE_ADV_FAST:
+        case KB_BLE_ADV_SLOW:
+            led_on(LED2, LED2_ACTIVE_STATE);
+            break;
+        case KB_BLE_GAP_CONN:
+        case KB_BLE_ADV_STOP:
+            led_off(LED2, LED2_ACTIVE_STATE);
+            break;
+        }
         break;
-        case KB_EVT_USB:
-            switch(param){
-                case KB_USB_START:
-                    usbd_is_started = true;
-                break;
-                case KB_USB_STOP:
-                    usbd_is_started = false;
-                break;
-            }
-            usb_protocol_led_process();
+    case KB_EVT_USB:
+        switch(param){
+        case KB_USB_START:
+            usbd_is_started = true;
+            break;
+        case KB_USB_STOP:
+            usbd_is_started = false;
+            break;
+        }
+        usb_protocol_led_process();
         break;
-        case KB_EVT_PROTOCOL_SWITCH:
-            switch(param){
-                case SUBEVT_PROTOCOL_BLE:
-                    current_protocol_is_usb = false;
-                break;
-                case SUBEVT_PROTOCOL_USB:
-                    current_protocol_is_usb = true;
-                break;
-            }
-            usb_protocol_led_process();
+    case KB_EVT_PROTOCOL_SWITCH:
+        switch(param){
+        case SUBEVT_PROTOCOL_BLE:
+            usbd_current_protocol = false;
+            break;
+        case SUBEVT_PROTOCOL_USB:
+            usbd_current_protocol = true;
+            break;
+        }
+        usb_protocol_led_process();
         break;
-        case KB_EVT_SLEEP:
-            kb_led_deinit();
+    case KB_EVT_SLEEP:
+        leds_deinit();
         break;
-        default:
+    default:
         break;
     }
 }
