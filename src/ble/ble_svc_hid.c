@@ -37,7 +37,7 @@
 #define INPUT_REP_CONSUMER_INDEX INPUT_REP_INDEX_INVALID
 #endif
 
-#define MAX_BUFFER_ENTRIES 10
+#define MAX_BUFFER_ENTRIES 30
 #ifndef MAX_BUFFER_ENTRIES
   #define MAX_BUFFER_ENTRIES 1
 #endif
@@ -292,9 +292,6 @@ void ble_keys_send(uint8_t report_id, uint8_t key_pattern_len, uint8_t* p_key_pa
     bool buffer_in = false;
     bool report_valid = true;
     uint8_t report_index;
-    if(m_conn_handle == BLE_CONN_HANDLE_INVALID){
-        return;
-    }
     if(report_id >= sizeof(hid_report_map_table)){ report_valid = false; }
     else{
         report_index = hid_report_map_table[report_id];
