@@ -64,7 +64,7 @@ static const uint8_t col_pins[KEY_COLS] = {
 
 /*自动休眠设置*/
 #define AUTO_SLEEP_ENABLE
-#define AUTO_SLEEP_TIMEOUT 300  // in second
+#define AUTO_SLEEP_TIMEOUT 600  // in second
 #if defined(AUTO_SLEEP_ENABLE) && !defined(AUTO_SLEEP_TIMEOUT)
     #define AUTO_SLEEP_TIMEOUT 300
 #endif
@@ -72,7 +72,7 @@ static const uint8_t col_pins[KEY_COLS] = {
 
 /*进入省电状态设置*/
 #define POWERSAVE_ENABLE
-#define POWERSAVE_TIMEOUT 180 // in second
+#define POWERSAVE_TIMEOUT 300 // in second
 #if defined(POWERSAVE_ENABLE) && !defined(POWERSAVE_TIMEOUT)
     #define POWERSAVE_TIMEOUT 60
 #endif

@@ -113,6 +113,11 @@ static void protocol_evt_handler(kb_event_type_t event, void * p_arg)
             break;
         }
     break;
+    case KB_EVT_USB:
+        if(param == KB_USB_STOP){
+            trig_kb_event_param(KB_EVT_PROTOCOL_SWITCH, SUBEVT_PROTOCOL_BLE);
+        }
+    break;
     }
 }
 
